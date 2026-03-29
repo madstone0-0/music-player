@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio_background/just_audio_background.dart';
-import 'package:music_player/screens/widgets/placeholders.dart';
+import 'package:music_player/screens/widgets/coverArt.dart';
 
 class AllTrackRow extends StatefulWidget {
   const AllTrackRow({super.key, required this.track, required this.onPressed, this.isWeb = false});
@@ -24,7 +24,7 @@ class _AllTrackRowState extends State<AllTrackRow> {
 
     return ListTile(
       onTap: widget.onPressed,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 
       leading: _VinylAlbumArt(track: widget.track, isWeb: widget.isWeb),
@@ -61,7 +61,10 @@ class _VinylAlbumArt extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          ClipRRect(borderRadius: BorderRadius.circular(size / 2), child: _buildImage(scheme, size)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(size / 2),
+            child: buildCoverArt(track, size, scheme: scheme, isWeb: isWeb),
+          ),
           Container(
             width: size,
             height: size,
@@ -79,40 +82,4 @@ class _VinylAlbumArt extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildImage(ColorScheme scheme, double size) {
-    final uri = track.artUri;
-
-    if (uri == null) {
-      return coverArtPlaceholder(scheme, size);
-    }
-
-    if (isWeb || uri.scheme.startsWith('http')) {
-      return CachedNetworkImage(
-        imageUrl: uri.toString(),
-        fit: BoxFit.cover,
-        width: size,
-        height: size,
-        placeholder: (_, __) => coverArtPlaceholder(scheme, size),
-        errorWidget: (_, __, ___) => coverArtPlaceholder(scheme, size),
-      );
-    }
-
-    if (uri.scheme == 'file') {
-      try {
-        return Image.file(
-          File(uri.toFilePath()),
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => coverArtPlaceholder(scheme, size),
-        );
-      } catch (e) {
-        return coverArtPlaceholder(scheme, size);
-      }
-    }
-
-    return coverArtPlaceholder(scheme, size);
-  }
-
 }

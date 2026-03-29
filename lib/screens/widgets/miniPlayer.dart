@@ -7,8 +7,8 @@ import 'package:music_player/screens/mainPlayer.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/PageManagerService.dart';
 
-class MiniPlayerView extends StatelessWidget {
-  const MiniPlayerView({super.key});
+class MiniPlayer extends StatelessWidget {
+  const MiniPlayer({super.key});
 
   @override
   Widget build(BuildContext context) {

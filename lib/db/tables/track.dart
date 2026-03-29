@@ -4,6 +4,8 @@ import 'package:drift/drift.dart';
 class Track extends Table {
   IntColumn get id => integer().autoIncrement()();
 
+  IntColumn get trackNo => integer().nullable()();
+
   TextColumn get path => text().unique()();
 
   TextColumn get title => text()();

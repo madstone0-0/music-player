@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:music_player/db/daos/track.dart';
+import 'package:music_player/db/tables/track.dart';
 import 'package:music_player/services/AudioTaggingService.dart';
 import 'package:music_player/services/LocalMediaService.dart';
 
@@ -34,6 +35,15 @@ class TrackRepository {
   Future<List<TrackData>> getByIds(List<int> ids) => _db.trackDao.getTracksByIds(ids);
 
   Stream<List<TrackData>> watchAll({SortMode mode = SortMode.titleAsc}) => _db.trackDao.watchAllTracks(mode: mode);
+
+  Future<List<TrackData>> getByAlbum(String album, {SortMode mode = SortMode.titleAsc}) async {
+    final allTracks = await _db.trackDao.getAllTracks();
+    return allTracks.where((t) => t.album == album).toList();
+  }
+
+  Stream<List<TrackData>> watchByAlbum(String album) => _db.trackDao
+      .watchAllTracks(mode: SortMode.trackNoAsc)
+      .map((list) => list.where((t) => t.album == album).toList());
 
   Future<TrackData?> findByPath(String path) => _db.trackDao.getTrackByPath(path);
 

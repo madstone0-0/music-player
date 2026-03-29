@@ -5,7 +5,7 @@ import '../tables/track.dart';
 
 part "track.g.dart";
 
-enum SortMode { titleAsc, titleDesc, artistAsc, artistDesc, albumAsc, albumDesc }
+enum SortMode { titleAsc, titleDesc, artistAsc, artistDesc, albumAsc, albumDesc, trackNoAsc, trackNoDesc }
 
 @DriftAccessor(tables: [Track])
 class TrackDao extends DatabaseAccessor<AppDatabase> with _$TrackDaoMixin {
@@ -39,6 +39,10 @@ class TrackDao extends DatabaseAccessor<AppDatabase> with _$TrackDaoMixin {
                 return OrderingTerm(expression: t.album);
               case SortMode.albumDesc:
                 return OrderingTerm(expression: t.album, mode: OrderingMode.desc);
+              case SortMode.trackNoAsc:
+                return OrderingTerm(expression: t.trackNo);
+              case SortMode.trackNoDesc:
+                return OrderingTerm(expression: t.trackNo, mode: OrderingMode.desc);
             }
           },
         ]))

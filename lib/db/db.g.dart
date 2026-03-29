@@ -21,6 +21,17 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
       'PRIMARY KEY AUTOINCREMENT',
     ),
   );
+  static const VerificationMeta _trackNoMeta = const VerificationMeta(
+    'trackNo',
+  );
+  @override
+  late final GeneratedColumn<int> trackNo = GeneratedColumn<int>(
+    'track_no',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _pathMeta = const VerificationMeta('path');
   @override
   late final GeneratedColumn<String> path = GeneratedColumn<String>(
@@ -107,6 +118,7 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    trackNo,
     path,
     title,
     artist,
@@ -130,6 +142,12 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('track_no')) {
+      context.handle(
+        _trackNoMeta,
+        trackNo.isAcceptableOrUnknown(data['track_no']!, _trackNoMeta),
+      );
     }
     if (data.containsKey('path')) {
       context.handle(
@@ -199,6 +217,10 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
         DriftSqlType.int,
         data['${effectivePrefix}id'],
       )!,
+      trackNo: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}track_no'],
+      ),
       path: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}path'],
@@ -242,6 +264,7 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
 
 class TrackData extends DataClass implements Insertable<TrackData> {
   final int id;
+  final int? trackNo;
   final String path;
   final String title;
   final String? artist;
@@ -252,6 +275,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
   final bool isIndexed;
   const TrackData({
     required this.id,
+    this.trackNo,
     required this.path,
     required this.title,
     this.artist,
@@ -265,6 +289,9 @@ class TrackData extends DataClass implements Insertable<TrackData> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    if (!nullToAbsent || trackNo != null) {
+      map['track_no'] = Variable<int>(trackNo);
+    }
     map['path'] = Variable<String>(path);
     map['title'] = Variable<String>(title);
     if (!nullToAbsent || artist != null) {
@@ -289,6 +316,9 @@ class TrackData extends DataClass implements Insertable<TrackData> {
   TrackCompanion toCompanion(bool nullToAbsent) {
     return TrackCompanion(
       id: Value(id),
+      trackNo: trackNo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(trackNo),
       path: Value(path),
       title: Value(title),
       artist: artist == null && nullToAbsent
@@ -317,6 +347,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return TrackData(
       id: serializer.fromJson<int>(json['id']),
+      trackNo: serializer.fromJson<int?>(json['trackNo']),
       path: serializer.fromJson<String>(json['path']),
       title: serializer.fromJson<String>(json['title']),
       artist: serializer.fromJson<String?>(json['artist']),
@@ -332,6 +363,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'trackNo': serializer.toJson<int?>(trackNo),
       'path': serializer.toJson<String>(path),
       'title': serializer.toJson<String>(title),
       'artist': serializer.toJson<String?>(artist),
@@ -345,6 +377,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
 
   TrackData copyWith({
     int? id,
+    Value<int?> trackNo = const Value.absent(),
     String? path,
     String? title,
     Value<String?> artist = const Value.absent(),
@@ -355,6 +388,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
     bool? isIndexed,
   }) => TrackData(
     id: id ?? this.id,
+    trackNo: trackNo.present ? trackNo.value : this.trackNo,
     path: path ?? this.path,
     title: title ?? this.title,
     artist: artist.present ? artist.value : this.artist,
@@ -367,6 +401,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
   TrackData copyWithCompanion(TrackCompanion data) {
     return TrackData(
       id: data.id.present ? data.id.value : this.id,
+      trackNo: data.trackNo.present ? data.trackNo.value : this.trackNo,
       path: data.path.present ? data.path.value : this.path,
       title: data.title.present ? data.title.value : this.title,
       artist: data.artist.present ? data.artist.value : this.artist,
@@ -384,6 +419,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
   String toString() {
     return (StringBuffer('TrackData(')
           ..write('id: $id, ')
+          ..write('trackNo: $trackNo, ')
           ..write('path: $path, ')
           ..write('title: $title, ')
           ..write('artist: $artist, ')
@@ -399,6 +435,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
   @override
   int get hashCode => Object.hash(
     id,
+    trackNo,
     path,
     title,
     artist,
@@ -413,6 +450,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
       identical(this, other) ||
       (other is TrackData &&
           other.id == this.id &&
+          other.trackNo == this.trackNo &&
           other.path == this.path &&
           other.title == this.title &&
           other.artist == this.artist &&
@@ -425,6 +463,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
 
 class TrackCompanion extends UpdateCompanion<TrackData> {
   final Value<int> id;
+  final Value<int?> trackNo;
   final Value<String> path;
   final Value<String> title;
   final Value<String?> artist;
@@ -435,6 +474,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
   final Value<bool> isIndexed;
   const TrackCompanion({
     this.id = const Value.absent(),
+    this.trackNo = const Value.absent(),
     this.path = const Value.absent(),
     this.title = const Value.absent(),
     this.artist = const Value.absent(),
@@ -446,6 +486,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
   });
   TrackCompanion.insert({
     this.id = const Value.absent(),
+    this.trackNo = const Value.absent(),
     required String path,
     required String title,
     this.artist = const Value.absent(),
@@ -458,6 +499,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
        title = Value(title);
   static Insertable<TrackData> custom({
     Expression<int>? id,
+    Expression<int>? trackNo,
     Expression<String>? path,
     Expression<String>? title,
     Expression<String>? artist,
@@ -469,6 +511,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (trackNo != null) 'track_no': trackNo,
       if (path != null) 'path': path,
       if (title != null) 'title': title,
       if (artist != null) 'artist': artist,
@@ -482,6 +525,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
 
   TrackCompanion copyWith({
     Value<int>? id,
+    Value<int?>? trackNo,
     Value<String>? path,
     Value<String>? title,
     Value<String?>? artist,
@@ -493,6 +537,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
   }) {
     return TrackCompanion(
       id: id ?? this.id,
+      trackNo: trackNo ?? this.trackNo,
       path: path ?? this.path,
       title: title ?? this.title,
       artist: artist ?? this.artist,
@@ -509,6 +554,9 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (trackNo.present) {
+      map['track_no'] = Variable<int>(trackNo.value);
     }
     if (path.present) {
       map['path'] = Variable<String>(path.value);
@@ -541,6 +589,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
   String toString() {
     return (StringBuffer('TrackCompanion(')
           ..write('id: $id, ')
+          ..write('trackNo: $trackNo, ')
           ..write('path: $path, ')
           ..write('title: $title, ')
           ..write('artist: $artist, ')
@@ -573,6 +622,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 typedef $$TrackTableCreateCompanionBuilder =
     TrackCompanion Function({
       Value<int> id,
+      Value<int?> trackNo,
       required String path,
       required String title,
       Value<String?> artist,
@@ -585,6 +635,7 @@ typedef $$TrackTableCreateCompanionBuilder =
 typedef $$TrackTableUpdateCompanionBuilder =
     TrackCompanion Function({
       Value<int> id,
+      Value<int?> trackNo,
       Value<String> path,
       Value<String> title,
       Value<String?> artist,
@@ -605,6 +656,11 @@ class $$TrackTableFilterComposer extends Composer<_$AppDatabase, $TrackTable> {
   });
   ColumnFilters<int> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get trackNo => $composableBuilder(
+    column: $table.trackNo,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -663,6 +719,11 @@ class $$TrackTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get trackNo => $composableBuilder(
+    column: $table.trackNo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get path => $composableBuilder(
     column: $table.path,
     builder: (column) => ColumnOrderings(column),
@@ -715,6 +776,9 @@ class $$TrackTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get trackNo =>
+      $composableBuilder(column: $table.trackNo, builder: (column) => column);
 
   GeneratedColumn<String> get path =>
       $composableBuilder(column: $table.path, builder: (column) => column);
@@ -772,6 +836,7 @@ class $$TrackTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<int?> trackNo = const Value.absent(),
                 Value<String> path = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String?> artist = const Value.absent(),
@@ -782,6 +847,7 @@ class $$TrackTableTableManager
                 Value<bool> isIndexed = const Value.absent(),
               }) => TrackCompanion(
                 id: id,
+                trackNo: trackNo,
                 path: path,
                 title: title,
                 artist: artist,
@@ -794,6 +860,7 @@ class $$TrackTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<int?> trackNo = const Value.absent(),
                 required String path,
                 required String title,
                 Value<String?> artist = const Value.absent(),
@@ -804,6 +871,7 @@ class $$TrackTableTableManager
                 Value<bool> isIndexed = const Value.absent(),
               }) => TrackCompanion.insert(
                 id: id,
+                trackNo: trackNo,
                 path: path,
                 title: title,
                 artist: artist,

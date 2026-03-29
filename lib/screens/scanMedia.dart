@@ -23,18 +23,6 @@ class _ScanMediaState extends State<ScanMedia> {
 
     return Scaffold(
       backgroundColor: scheme.surface,
-      appBar: AppBar(
-        backgroundColor: scheme.surface,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        title: Text(
-          'Scan Media',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
-        ),
-      ),
       body: Obx(() {
         return switch (vm.status.value) {
           ScanStatus.idle => _IdleView(vm: vm),

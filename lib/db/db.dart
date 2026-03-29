@@ -12,7 +12,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 1;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -29,7 +29,7 @@ class AppDatabase extends _$AppDatabase {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     return driftDatabase(
-      name: 'music_player.db',
+      name: 'test_db_1.db',
       native: const DriftNativeOptions(
         // By default, `driftDatabase` from `package:drift_flutter` stores the
         // database files in `getApplicationDocumentsDirectory()`.

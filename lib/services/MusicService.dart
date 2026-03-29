@@ -1,7 +1,7 @@
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/db/repo/track.dart';
-import 'package:music_player/db/tables/track_mapper.dart';
+import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/services/AudioPlayerHandlerService.dart';
 import 'package:music_player/services/LocatorService.dart';
 

@@ -24,9 +24,7 @@ class AudioTaggingService {
 
         if (!coverFile.existsSync()) {
           // Lower the quality of the image to reduce file size
-          await coverFile.writeAsBytes(
-            await compressImage(tag.pictures.first, quality: 50),
-          );
+          await coverFile.writeAsBytes(await compressImage(tag.pictures.first, quality: 50));
         }
       }
 
@@ -34,12 +32,13 @@ class AudioTaggingService {
 
       return TrackCompanion.insert(
         path: path,
+        trackNo: Value(tag.trackNumber),
         title: title,
-        artist: Value.absentIfNull(tag.trackArtist),
-        album: Value.absentIfNull(tag.album),
-        genre: Value.absentIfNull(tag.genre),
-        coverPath: Value.absentIfNull(coverPath),
-        lastModified: Value.absentIfNull(fileModifiedDate),
+        artist: Value(tag.trackArtist),
+        album: Value(tag.album),
+        genre: Value(tag.genre),
+        coverPath: Value(coverPath),
+        lastModified: Value(fileModifiedDate),
       );
     } catch (e) {
       debugPrint('Tag read failed for $path: $e');

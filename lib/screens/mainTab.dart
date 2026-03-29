@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:music_player/models/splash.dart';
 import 'package:music_player/screens/home.dart';
 import 'package:music_player/screens/scanMedia.dart';
-import 'package:music_player/screens/tracks.dart';
+import 'package:music_player/screens/library.dart';
 import 'package:music_player/screens/widgets/miniPlayer.dart';
 
 class MainTab extends StatefulWidget {
@@ -17,7 +17,7 @@ class _MainTabState extends State<MainTab> {
   int _selectedIndex = 0;
 
   // Define the screens once to be used in the IndexedStack
-  final List<Widget> _screens = const [Home(), Tracks(), ScanMedia()];
+  final List<Widget> _screens = const [Home(), Library(), ScanMedia()];
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +31,7 @@ class _MainTabState extends State<MainTab> {
         children: [
           IndexedStack(index: _selectedIndex, children: _screens),
 
-          const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayerView()),
+          const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
         ],
       ),
 

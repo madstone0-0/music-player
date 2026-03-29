@@ -1,8 +1,12 @@
+import 'package:azlistview/azlistview.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:music_player/common/color.dart';
-import 'package:music_player/models/splash.dart';
-import 'package:music_player/screens/allTracks.dart';
+import 'package:music_player/db/daos/track.dart';
+import 'package:music_player/db/tables/trackMapper.dart';
+import 'package:music_player/models/tracks.dart'; // Adjust import if VM is moved
+import 'package:music_player/screens/widgets/allTracksRow.dart';
+import 'package:music_player/services/LocatorService.dart';
+import 'package:music_player/services/MusicService.dart';
 
 class Tracks extends StatefulWidget {
   const Tracks({super.key});
@@ -11,188 +15,172 @@ class Tracks extends StatefulWidget {
   State<Tracks> createState() => _TracksState();
 }
 
-class _TracksState extends State<Tracks> with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-
-  static const _tabs = <({String label, IconData icon})>[
-    (label: 'All Tracks', icon: Icons.music_note_outlined),
-    // (label: 'Playlists',  icon: Icons.queue_music_outlined),
-    // (label: 'Albums',     icon: Icons.album_outlined),
-    // (label: 'Artists',    icon: Icons.person_outline),
-    // (label: 'Genres',     icon: Icons.category_outlined),
-  ];
+class _TracksState extends State<Tracks> {
+  final player = getIt<MusicService>();
+  final vm = Get.put(TracksViewModel());
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          SliverAppBar(
-            pinned: true,
-            floating: true,
-            snap: true,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            backgroundColor: scheme.surface,
-            surfaceTintColor: Colors.transparent,
-            forceElevated: innerBoxIsScrolled,
+      backgroundColor: scheme.surface,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SortSection(vm: vm),
 
-            leading: IconButton(
-              onPressed: () => Get.find<SplashViewModel>().openDrawer(),
-              tooltip: 'Menu',
-              icon: Icon(Icons.menu_rounded, color: scheme.onSurface),
-            ),
-
-            title: Text(
-              'Tracks',
-              style: textTheme.titleLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
-            ),
-
-            // M3 IconButton.filledTonal gives the search icon a proper
-            // container rather than a raw icon floating in the app bar.
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: IconButton.filledTonal(
-                  onPressed: _openSearch,
-                  tooltip: 'Search',
-                  style: IconButton.styleFrom(
-                    backgroundColor: scheme.surfaceContainerHighest,
-                    foregroundColor: scheme.onSurfaceVariant,
-                  ),
-                  icon: const Icon(Icons.search_rounded, size: 20),
-                ),
-              ),
-            ],
-
-            bottom: _tabs.length > 1 ? _StyledTabBar(controller: _tabController, tabs: _tabs) : null,
+          Expanded(
+            child: _TrackListAZ(vm: vm, player: player),
           ),
         ],
-
-        body: TabBarView(
-          controller: _tabController,
-          children: const [
-            AllTracks(),
-            // Playlists(),
-            // Albums(),
-            // Artists(),
-            // Genres(),
-          ],
-        ),
       ),
     );
   }
+}
 
-  void _openSearch() {
-    showSearch(context: context, delegate: _TrackSearchDelegate());
+class _SortSection extends StatelessWidget {
+  const _SortSection({required this.vm});
+
+  final TracksViewModel vm;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      // Obx removed from here because the Row itself is static
+      child: Row(
+        children: [
+          _SortChip(label: "Title", asc: SortMode.titleAsc, desc: SortMode.titleDesc, vm: vm),
+          const SizedBox(width: 8),
+          _SortChip(label: "Artist", asc: SortMode.artistAsc, desc: SortMode.artistDesc, vm: vm),
+          const SizedBox(width: 8),
+          _SortChip(label: "Album", asc: SortMode.albumAsc, desc: SortMode.albumDesc, vm: vm),
+        ],
+      ),
+    );
   }
 }
 
-class _StyledTabBar extends StatelessWidget implements PreferredSizeWidget {
-  const _StyledTabBar({required this.controller, required this.tabs});
+class _SortChip extends StatelessWidget {
+  const _SortChip({required this.label, required this.asc, required this.desc, required this.vm});
 
-  final TabController controller;
-  final List<({String label, IconData icon})> tabs;
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kTextTabBarHeight);
+  final String label;
+  final SortMode asc;
+  final SortMode desc;
+  final TracksViewModel vm;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
 
-    return TabBar(
-      controller: controller,
-      // M3: secondary tab bar style — label indicator, no underline divider.
-      tabAlignment: TabAlignment.start,
-      isScrollable: true,
-      dividerColor: Colors.transparent,
+    // Wrap only the part that depends on the observable
+    return Obx(() {
+      final isSelected = vm.sortMode.value == asc || vm.sortMode.value == desc;
+      final isAsc = vm.sortMode.value == asc;
 
-      // Indicator: pill shape in primaryContainer, M3's recommended style.
-      indicator: BoxDecoration(borderRadius: BorderRadius.circular(20), color: scheme.secondaryContainer),
-      indicatorSize: TabBarIndicatorSize.tab,
-      indicatorPadding: const EdgeInsets.symmetric(vertical: 6),
-
-      labelColor: scheme.onSecondaryContainer,
-      unselectedLabelColor: scheme.onSurfaceVariant,
-      labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-      unselectedLabelStyle: Theme.of(context).textTheme.labelLarge,
-
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-
-      tabs: tabs
-          .map(
-            (t) => Tab(
-              height: kTextTabBarHeight,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [Icon(t.icon, size: 16), const SizedBox(width: 6), Text(t.label)],
-                ),
-              ),
-            ),
-          )
-          .toList(),
-    );
+      return ChoiceChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (_) => vm.toggleSort(label),
+        showCheckmark: false,
+        selectedColor: scheme.secondaryContainer,
+        backgroundColor: scheme.surface,
+        avatar: isSelected
+            ? Icon(
+                isAsc ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                size: 18,
+                color: scheme.onSecondaryContainer,
+              )
+            : null,
+        labelStyle: text.labelLarge?.copyWith(
+          color: isSelected ? scheme.onSecondaryContainer : scheme.onSurfaceVariant,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: isSelected ? Colors.transparent : scheme.outlineVariant),
+        ),
+      );
+    });
   }
 }
 
-class _TrackSearchDelegate extends SearchDelegate<String> {
-  @override
-  String get searchFieldLabel => 'Search tracks…';
+class _TrackListAZ extends StatelessWidget {
+  const _TrackListAZ({required this.vm, required this.player});
 
-  @override
-  ThemeData appBarTheme(BuildContext context) {
-    // Inherit the app theme so the search bar matches.
-    return Theme.of(context);
-  }
-
-  @override
-  List<Widget> buildActions(BuildContext context) => [
-    if (query.isNotEmpty) IconButton(onPressed: () => query = '', icon: const Icon(Icons.clear_rounded)),
-  ];
-
-  @override
-  Widget buildLeading(BuildContext context) =>
-      IconButton(onPressed: () => close(context, ''), icon: const Icon(Icons.arrow_back_rounded));
-
-  @override
-  Widget buildResults(BuildContext context) => _SearchResults(query: query);
-
-  @override
-  Widget buildSuggestions(BuildContext context) => query.isEmpty ? const SizedBox() : _SearchResults(query: query);
-}
-
-class _SearchResults extends StatelessWidget {
-  const _SearchResults({required this.query});
-
-  final String query;
+  final TracksViewModel vm;
+  final MusicService player;
 
   @override
   Widget build(BuildContext context) {
-    // Wire to your TrackRepository / ViewModel when ready.
-    // Placeholder keeps the structure correct in the meantime.
-    return Center(
-      child: Text(
-        'Results for "$query"',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-      ),
-    );
+    final scheme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    return Obx(() {
+      final list = vm.azItms.value;
+
+      if (list.isEmpty) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      return AzListView(
+        data: list,
+        itemCount: list.length,
+        indexBarOptions: IndexBarOptions(
+          needRebuild: true,
+          selectTextStyle: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+          selectItemDecoration: BoxDecoration(shape: BoxShape.circle, color: scheme.primary),
+          indexHintAlignment: Alignment.centerRight,
+          indexHintOffset: const Offset(-20, 0),
+          textStyle: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+        ),
+        indexHintBuilder: (context, hint) {
+          return Container(
+            alignment: Alignment.center,
+            width: 60.0,
+            height: 60.0,
+            decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+            child: Text(
+              hint,
+              style: TextStyle(color: scheme.onPrimary, fontSize: 28.0, fontWeight: FontWeight.bold),
+            ),
+          );
+        },
+        susItemBuilder: (context, index) {
+          final tag = list[index].getSuspensionTag();
+          return Container(
+            height: 40,
+            width: screenWidth,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            color: scheme.surface,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              tag,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: scheme.primary, fontWeight: FontWeight.bold),
+            ),
+          );
+        },
+        itemBuilder: (context, index) {
+          final azItem = list[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 4.0, right: 28.0),
+            child: AllTrackRow(
+              track: azItem.track.toMediaItem(),
+              onPressed: () => player.play(vm.all.value, index: index),
+            ),
+          );
+        },
+      );
+    });
   }
 }

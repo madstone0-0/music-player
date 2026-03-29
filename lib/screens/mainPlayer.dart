@@ -135,7 +135,7 @@ class _ArtworkWithSeek extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final artSize = width * 0.78;
+    final artSize = width * 0.70;
 
     return Hero(
       tag: 'currentArtwork',
