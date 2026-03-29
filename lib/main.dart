@@ -1,121 +1,163 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:music_player/common/color.dart';
+import 'package:music_player/screens/splash.dart';
+import 'package:music_player/services/AudioPlayerHandlerService.dart';
+import 'package:music_player/services/LocatorService.dart';
+import 'package:music_player/services/PageManagerService.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initAudioService();
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return GetMaterialApp(
+      themeMode: ThemeMode.dark,       // or ThemeMode.system
+      theme:     AppTheme.light,
+      darkTheme:  AppTheme.dark,
+      title: 'Music Player',
+      debugShowCheckedModeBanner: false,
+      home: const _PermissionGate(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class _PermissionGate extends StatefulWidget {
+  const _PermissionGate();
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<_PermissionGate> createState() => _PermissionGateState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _PermissionGateState extends State<_PermissionGate> {
+  _GateStatus _status = _GateStatus.checking;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    final granted = await _requestStoragePermission();
+
+    if (!granted) {
+      setState(() => _status = _GateStatus.denied);
+      return;
+    }
+
+    await setupLocatorService();
+
+    if (!mounted) return;
+
+    getIt<PageManagerService>().init();
+
+    Get.off(() => const Splash());
+  }
+
+  Future<bool> _requestStoragePermission() async {
+    final results = await [
+      Permission.audio, // Android 13+ (TIRAMISU)
+      Permission.storage, // Android ≤ 12 / iOS fallback
+    ].request();
+
+    return results.values.any((s) => s == PermissionStatus.granted || s == PermissionStatus.limited);
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      backgroundColor: AppColor.bg,
+      body: switch (_status) {
+        _GateStatus.checking => const _CheckingView(),
+        _GateStatus.denied => _DeniedView(onRetry: _bootstrap),
+      },
+    );
+  }
+}
+
+enum _GateStatus { checking, denied }
+
+class _CheckingView extends StatelessWidget {
+  const _CheckingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColor.focus), strokeWidth: 2),
+          const SizedBox(height: 20),
+          Text('Setting up…', style: TextStyle(color: AppColor.secondaryText, fontSize: 13)),
+        ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+    );
+  }
+}
+
+class _DeniedView extends StatelessWidget {
+  const _DeniedView({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.folder_off_outlined, color: AppColor.secondaryText, size: 52),
+          const SizedBox(height: 24),
+          Text(
+            'Storage access required',
+            style: TextStyle(color: AppColor.primaryText, fontSize: 18, fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'This app needs access to your audio files. '
+            'Please grant storage permission to continue.',
+            style: TextStyle(color: AppColor.secondaryText, fontSize: 13, height: 1.5),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onRetry,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColor.focus,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text(
+                'Grant Permission',
+                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+              ),
             ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+          ),
+          const SizedBox(height: 12),
+          // If permanently denied the system dialog won't appear again —
+          // send the user to app settings instead.
+          TextButton(
+            onPressed: openAppSettings,
+            child: Text('Open app settings', style: TextStyle(color: AppColor.secondaryText, fontSize: 13)),
+          ),
+        ],
       ),
     );
   }
