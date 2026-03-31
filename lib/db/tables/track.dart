@@ -12,9 +12,13 @@ class Track extends Table {
 
   TextColumn get artist => text().nullable()();
 
+  TextColumn get albumArtist => text().nullable()();
+
   TextColumn get album => text().nullable()();
 
   TextColumn get genre => text().nullable()();
+
+  IntColumn get year => integer().nullable()();
 
   TextColumn get coverPath => text().nullable()();
 

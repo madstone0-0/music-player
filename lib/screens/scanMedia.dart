@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:music_player/common/nav.dart';
 import 'package:music_player/models/scanMedia.dart';
 
 class ScanMedia extends StatefulWidget {
@@ -20,9 +21,21 @@ class _ScanMediaState extends State<ScanMedia> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       backgroundColor: scheme.surface,
+      appBar: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+
+        title: Text(
+          "Scan Media",
+          style: textTheme.titleLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
+        ),
+      ),
       body: Obx(() {
         return switch (vm.status.value) {
           ScanStatus.idle => _IdleView(vm: vm),
@@ -77,7 +90,7 @@ class _IdleView extends StatelessWidget {
               () => SwitchListTile(
                 value: vm.overwrite.value,
                 onChanged: (val) => vm.overwrite.value = val,
-                activeColor: scheme.primary,
+                activeThumbColor: scheme.primary,
                 title: Text('Force Overwrite', style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
                 subtitle: Text(
                   'Re-read ID3 tags for all files, even if they haven\'t changed.',
@@ -220,7 +233,7 @@ class _DoneView extends StatelessWidget {
             width: double.infinity,
             height: 52,
             child: FilledButton(
-              onPressed: () => Get.offAllNamed('/MainTab'),
+              onPressed: () => Get.offAllNamed('/library', id: NESTED_NAV_ID),
               style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               child: const Text('Go to Library', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),

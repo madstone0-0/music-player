@@ -41,9 +41,29 @@ class TrackRepository {
     return allTracks.where((t) => t.album == album).toList();
   }
 
-  Stream<List<TrackData>> watchByAlbum(String album) => _db.trackDao
+  Stream<List<TrackData>> watchByAlbumAndArtist(String? album, String? artist) => _db.trackDao
       .watchAllTracks(mode: SortMode.trackNoAsc)
-      .map((list) => list.where((t) => t.album == album).toList());
+      .map((list) => list.where((t) => t.album == album && t.artist == artist).toList());
+
+  Stream<List<Map<String, dynamic>>> watchGroupedAlbums({SortMode mode = SortMode.albumAsc}) =>
+      _db.trackDao.watchGroupedAlbums(mode: mode);
+
+  Stream<List<Map<String, dynamic>>> watchGroupedArtists({
+    ArtistGrouping grouping = ArtistGrouping.artist,
+    SortMode mode = SortMode.artistAsc,
+  }) => grouping == ArtistGrouping.artist
+      ? _db.trackDao.watchGroupedArtists(mode: mode)
+      : _db.trackDao.watchGroupedAlbumArtists(mode: mode);
+
+  Stream<List<TrackData>> watchTracksByArtist(String name, {ArtistGrouping grouping = ArtistGrouping.artist}) =>
+      grouping == ArtistGrouping.artist
+      ? _db.trackDao.watchTracksByArtist(name)
+      : _db.trackDao.watchTracksByAlbumArtist(name);
+
+  Stream<List<Map<String, dynamic>>> watchAlbumsByArtist(
+    String name, {
+    ArtistGrouping grouping = ArtistGrouping.artist,
+  }) => _db.trackDao.watchAlbumsByArtist(name, grouping: grouping);
 
   Future<TrackData?> findByPath(String path) => _db.trackDao.getTrackByPath(path);
 

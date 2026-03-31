@@ -5,11 +5,11 @@ import 'package:music_player/db/db.dart';
 import 'package:music_player/db/repo/track.dart';
 import 'package:music_player/services/LocatorService.dart';
 
-class AZItem extends ISuspensionBean {
+class AZTrack extends ISuspensionBean {
   final TrackData track;
   final String tag;
 
-  AZItem({required this.track, required this.tag});
+  AZTrack({required this.track, required this.tag});
 
   @override
   String getSuspensionTag() => tag;
@@ -20,7 +20,7 @@ class TracksViewModel extends GetxController {
 
   final all = <TrackData>[].obs;
   final sortMode = SortMode.titleAsc.obs;
-  final azItms = <AZItem>[].obs;
+  final azItms = <AZTrack>[].obs;
 
   @override
   void onInit() {
@@ -40,7 +40,7 @@ class TracksViewModel extends GetxController {
       return;
     }
 
-    final List<AZItem> mappedList = all.map((track) {
+    final List<AZTrack> mappedList = all.map((track) {
       String rawString = '';
 
       // Determine which field to extract the first letter from
@@ -58,7 +58,7 @@ class TracksViewModel extends GetxController {
         tag = '#';
       }
 
-      return AZItem(track: track, tag: tag);
+      return AZTrack(track: track, tag: tag);
     }).toList();
 
     // This utility calculates the headers and prepares the list for the sidebar

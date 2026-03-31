@@ -5,13 +5,24 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/common/color.dart';
+import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/db.dart';
+import 'package:music_player/models/mainPlayer.dart';
+import 'package:music_player/screens/widgets/coverArt.dart';
+import 'package:music_player/screens/widgets/trackCoverArt.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/PageManagerService.dart';
 import "./widgets/controlButtons.dart";
 
-class MainPlayer extends StatelessWidget {
+class MainPlayer extends StatefulWidget {
   const MainPlayer({super.key});
+
+  @override
+  State<MainPlayer> createState() => MainPlayerState();
+}
+
+class MainPlayerState extends State<MainPlayer> {
+  final vm = Get.put(MainPlayerViewModel());
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +44,7 @@ class MainPlayer extends StatelessWidget {
           scrolledUnderElevation: 0,
           elevation: 0,
           leading: IconButton(
-            onPressed: Get.back,
+            onPressed: () => Get.back(),
             tooltip: 'Close',
             icon: Icon(Icons.keyboard_arrow_down_rounded, size: 28, color: scheme.onSurface),
           ),
@@ -49,7 +60,7 @@ class MainPlayer extends StatelessWidget {
           valueListenable: page.currentTrackNotifier,
           builder: (context, track, _) {
             if (track == null) return const SizedBox.shrink();
-            return _PlayerBody(track: track, page: page);
+            return _PlayerBody(track: track, page: page, vm: vm);
           },
         ),
       ),
@@ -57,11 +68,10 @@ class MainPlayer extends StatelessWidget {
   }
 }
 
-// ─── Main body ────────────────────────────────────────────────────────────────
-
 class _PlayerBody extends StatelessWidget {
-  const _PlayerBody({required this.track, required this.page});
+  const _PlayerBody({required this.track, required this.page, required this.vm});
 
+  final MainPlayerViewModel vm;
   final MediaItem track;
   final PageManagerService page;
 
@@ -77,14 +87,12 @@ class _PlayerBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 12),
+            const Flexible(child: SizedBox(height: 12)),
 
-            // ── Artwork + circular seek bar ────────────────────────────────
-            _ArtworkWithSeek(track: track, page: page, width: width),
+            _ArtworkWithSeek(track: track, page: page, vm: vm, width: width),
 
-            const SizedBox(height: 20),
+            const Flexible(child: SizedBox(height: 20)),
 
-            // ── Track info ────────────────────────────────────────────────
             Text(
               track.title,
               textAlign: TextAlign.center,
@@ -93,6 +101,7 @@ class _PlayerBody extends StatelessWidget {
               style: text.titleLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
+
             Text(
               [if (track.artist != null) track.artist!, if (track.album != null) track.album!].join(' • '),
               textAlign: TextAlign.center,
@@ -101,16 +110,16 @@ class _PlayerBody extends StatelessWidget {
               style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
 
-            const SizedBox(height: 20),
+            const Flexible(child: SizedBox(height: 20)),
 
             _LinearSeekBar(page: page),
 
             const SizedBox(height: 8),
             _Timestamps(page: page),
 
-            const SizedBox(height: 24),
+            const Flexible(child: SizedBox(height: 24)),
 
-            PrimaryContols(page: page),
+            PrimaryControls(page: page),
 
             const Spacer(),
 
@@ -124,50 +133,54 @@ class _PlayerBody extends StatelessWidget {
   }
 }
 
-// ─── Artwork ──────────────────────────────────────────────────────────────────
-
 class _ArtworkWithSeek extends StatelessWidget {
-  const _ArtworkWithSeek({required this.track, required this.page, required this.width});
+  const _ArtworkWithSeek({required this.track, required this.page, required this.vm, required this.width});
 
+  final MainPlayerViewModel vm;
   final MediaItem track;
   final PageManagerService page;
   final double width;
 
   @override
   Widget build(BuildContext context) {
-    final artSize = width * 0.70;
+    final scheme = Theme.of(context).colorScheme;
+
+    // Cap artwork at 300 so it doesn't crowd content on small screens.
+    final size = (width * 0.70).clamp(0.0, 300.0);
 
     return Hero(
       tag: 'currentArtwork',
-      child: SizedBox.square(
-        dimension: artSize,
-        child: Card(
-          elevation: 0,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          clipBehavior: Clip.antiAlias,
-          child: _artwork(artSize),
-        ),
+      child: TrackCoverArt(
+        track: track,
+        size: size,
+        style: CoverStyle.rounded,
+        coverArtOverride: _artwork(scheme, size),
       ),
     );
   }
 
-  Widget _artwork(double size) {
-    if (track.artUri != null) {
-      return Image.file(
-        File(track.artUri!.toFilePath()),
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _placeholder(size),
-      );
-    }
-    return _placeholder(size);
+  Widget _artwork(ColorScheme scheme, double size) {
+    return Obx(() {
+      final art = vm.coverArt;
+
+      if (art != null) {
+        return Image.memory(art.bytes, width: size, height: size, fit: BoxFit.cover);
+      }
+
+      if (track.artUri != null) {
+        return Image.file(
+          File(track.artUri!.toFilePath()),
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => coverArtPlaceholder(scheme, size),
+        );
+      }
+
+      return coverArtPlaceholder(scheme, size);
+    });
   }
-
-  Widget _placeholder(double size) => Image.asset('assets/img/cover.jpg', width: size, height: size, fit: BoxFit.cover);
 }
-
-// ─── Linear seek bar ──────────────────────────────────────────────────────────
 
 class _LinearSeekBar extends StatelessWidget {
   const _LinearSeekBar({required this.page});
@@ -206,8 +219,6 @@ class _LinearSeekBar extends StatelessWidget {
     );
   }
 }
-
-// ─── Timestamps ───────────────────────────────────────────────────────────────
 
 class _Timestamps extends StatelessWidget {
   const _Timestamps({required this.page});

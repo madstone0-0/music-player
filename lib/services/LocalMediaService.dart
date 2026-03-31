@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 const Set<String> AUDIO_EXTENSIONS = {'.mp3', '.m4a', '.aac', '.wav', '.flac'};
 
@@ -12,37 +13,32 @@ String extOf(String path) {
   return name.substring(dot);
 }
 
-List<LocalMediaFile> _scanDirectoryTask(Map<String, dynamic> args) {
+Future<List<LocalMediaFile>> _scanDirectoryTask(Map<String, dynamic> args) async {
   final String baseDirectory = args['baseDirectory'];
   final bool recursive = args['recursive'];
   final Set<String> supportedExtensions = args['supportedExtensions'];
 
   final dir = Directory(baseDirectory);
-  if (!dir.existsSync()) {
-    return <LocalMediaFile>[];
-  }
+  if (!dir.existsSync()) return <LocalMediaFile>[];
 
   final results = <LocalMediaFile>[];
 
-  // Using listSync avoids the massive overhead of async stream events
-  final entities = dir.listSync(recursive: recursive, followLinks: false);
-
-  for (final entity in entities) {
+  await for (final entity in dir.list(recursive: recursive, followLinks: false)) {
     if (entity is! File) continue;
 
     final path = entity.path;
-    final ext = extOf(path);
+    final ext = p.extension(path).toLowerCase();
 
     if (!supportedExtensions.contains(ext)) continue;
 
     try {
-      // statSync grabs file info instantly from the OS
-      final stat = entity.statSync();
+      // 3. Use async stat()
+      final stat = await entity.stat();
 
       results.add(
         LocalMediaFile(
           path: path,
-          name: LocalMediaService.fileNameOf(path),
+          name: p.basename(path), // Faster than custom fileNameOf
           sizeBytes: stat.size,
           modifiedAt: stat.modified,
         ),
@@ -52,8 +48,6 @@ List<LocalMediaFile> _scanDirectoryTask(Map<String, dynamic> args) {
     }
   }
 
-  // Sort in the background so the UI doesn't freeze
-  results.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
   return results;
 }
 
@@ -116,7 +110,6 @@ class LocalMediaService {
     return Directory(baseDirectory).exists();
   }
 
-  // Changed from private (_fileNameOf) to public so the top-level isolate task can use it
   static String fileNameOf(String path) {
     return path.split(Platform.pathSeparator).last;
   }

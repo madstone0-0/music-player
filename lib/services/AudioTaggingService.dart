@@ -8,11 +8,21 @@ import 'package:music_player/utils/utils.dart';
 import 'package:path_provider/path_provider.dart';
 
 class AudioTaggingService {
-  static Future<TrackCompanion> read(String path, {DateTime? fileModifiedDate}) async {
+  static Future<Tag?> readTag(String path) async {
+    try {
+      return await AudioTags.read(path);
+    } catch (e) {
+      debugPrint('Tag read failed for $path: $e');
+      return null;
+    }
+  }
+
+  static Future<TrackCompanion> read(String path) async {
     final fallbackTitle = path.split(Platform.pathSeparator).last;
+    final fileModifiedDate = await File(path).lastModified();
 
     try {
-      var tag = await AudioTags.read(path);
+      var tag = await readTag(path);
       if (tag == null) {
         return TrackCompanion.insert(path: path, title: fallbackTitle);
       }
@@ -33,6 +43,8 @@ class AudioTaggingService {
       return TrackCompanion.insert(
         path: path,
         trackNo: Value(tag.trackNumber),
+        year: Value(tag.year),
+        albumArtist: Value(tag.albumArtist),
         title: title,
         artist: Value(tag.trackArtist),
         album: Value(tag.album),

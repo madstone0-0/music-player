@@ -4,6 +4,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/services/AudioPlayerHandlerService.dart';
 import 'package:music_player/services/LocatorService.dart';
+import 'package:music_player/services/MusicService.dart';
 
 enum ButtonState { paused, playing, loading }
 
@@ -34,7 +35,7 @@ class RepeatButtonNotifier extends ValueNotifier<RepeatState> {
 }
 
 class PageManagerService {
-  final _handler = getIt<AudioPlayerHandlerService>();
+  final _musicSrv = getIt<MusicService>();
 
   final currentTrackNotifier = ValueNotifier<MediaItem?>(null);
   final queueNotifier = ValueNotifier<List<MediaItem>>([]);
@@ -52,48 +53,41 @@ class PageManagerService {
     _listenToPosition();
     _listenToBufferedPosition();
     _listenToDuration();
+    _listenToNavigationState();
+    _listenToShuffleMode();
   }
 
-  // ── Listeners ─────────────────────────────────────────────────────────────────
-
   void _listenToQueue() {
-    _handler.Q.addListener(() {
-      final q = _handler.Q.value;
+    _musicSrv.Q.addListener(() {
+      final q = _musicSrv.Q.value;
       queueNotifier.value = q;
       _updateSkipButtons();
     });
   }
 
   void _listenToCurrentTrack() {
-    _handler.curr.addListener(() {
-      currentTrackNotifier.value = _handler.curr.value;
+    _musicSrv.curr.addListener(() {
+      currentTrackNotifier.value = _musicSrv.curr.value;
       _updateSkipButtons();
     });
   }
 
   void _updateSkipButtons() {
-    final q = _handler.Q.value;
-    final track = _handler.curr.value;
-    if (q.length < 2 || track == null) {
-      isFirstTrackNotifier.value = true;
-      isLastTrackNotifier.value = true;
-    } else {
-      isFirstTrackNotifier.value = q.first.id == track.id;
-      isLastTrackNotifier.value = q.last.id == track.id;
-    }
+    final player = _musicSrv.handler.player;
+    isFirstTrackNotifier.value = !player.hasPrevious;
+    isLastTrackNotifier.value = !player.hasNext;
   }
 
   void _listenToPlayerState() {
-    _handler.playerSS.listen((state) {
+    _musicSrv.playerSS.listen((state) {
       final processing = state.processingState;
       if (processing == ProcessingState.loading || processing == ProcessingState.buffering) {
         playButtonNotifier.value = ButtonState.loading;
       } else if (!state.playing) {
         playButtonNotifier.value = ButtonState.paused;
       } else if (processing == ProcessingState.completed) {
-        // Auto-restart at end of queue.
-        _handler.seek(Duration.zero);
-        _handler.pause();
+        _musicSrv.seek(Duration.zero);
+        _musicSrv.pause();
         playButtonNotifier.value = ButtonState.paused;
       } else {
         playButtonNotifier.value = ButtonState.playing;
@@ -102,21 +96,21 @@ class PageManagerService {
   }
 
   void _listenToPosition() {
-    _handler.posS.listen((position) {
+    _musicSrv.posS.listen((position) {
       final old = progressNotifier.value;
       progressNotifier.value = ProgressBarState(current: position, buffered: old.buffered, total: old.total);
     });
   }
 
   void _listenToBufferedPosition() {
-    _handler.bufPosS.listen((buffered) {
+    _musicSrv.bufPosS.listen((buffered) {
       final old = progressNotifier.value;
       progressNotifier.value = ProgressBarState(current: old.current, buffered: buffered, total: old.total);
     });
   }
 
   void _listenToDuration() {
-    _handler.durS.listen((duration) {
+    _musicSrv.durS.listen((duration) {
       final old = progressNotifier.value;
       progressNotifier.value = ProgressBarState(
         current: old.current,
@@ -126,37 +120,56 @@ class PageManagerService {
     });
   }
 
-  void play() => _handler.play();
+  void _listenToShuffleMode() {
+    _musicSrv.shuffleModeS.listen((enabled) {
+      isShuffleEnabledNotifier.value = enabled;
+    });
+  }
 
-  void pause() => _handler.pause();
+  void _listenToNavigationState() {
+    void refresh() {
+      isFirstTrackNotifier.value = !_musicSrv.handler.player.hasPrevious;
+      isLastTrackNotifier.value = !_musicSrv.handler.player.hasNext;
+    }
 
-  void seek(Duration position) => _handler.seek(position);
+    _musicSrv.playerSS.listen((_) => refresh());
+    _musicSrv.shuffleModeS.listen((_) => refresh());
+    _musicSrv.Q.addListener(refresh);
+    _musicSrv.curr.addListener(refresh);
 
-  void next() => _handler.skipToNext();
+    refresh();
+  }
 
-  void previous() => _handler.skipToPrevious();
+  void play() => _musicSrv.play();
 
-  void skipTo(int index) => _handler.skipToQueueItem(index);
+  void pause() => _musicSrv.pause();
+
+  void seek(Duration position) => _musicSrv.seek(position);
+
+  void next() => _musicSrv.next();
+
+  void prev() => _musicSrv.prev();
+
+  void skipTo(int index) => _musicSrv.skipTo(index);
 
   void toggleRepeat() {
     repeatButtonNotifier.nextState();
-    _handler.setRepeatMode(repeatButtonNotifier.toLoopMode());
+    _musicSrv.setRepeatMode(repeatButtonNotifier.toLoopMode());
   }
 
   void toggleShuffle() {
     final enabled = !isShuffleEnabledNotifier.value;
     isShuffleEnabledNotifier.value = enabled;
-    _handler.setShuffleMode(enabled);
+    _musicSrv.setShuffleMode(enabled);
   }
 
   void setShuffle(bool enabled) {
     isShuffleEnabledNotifier.value = enabled;
-    _handler.setShuffleMode(enabled);
+    _musicSrv.setShuffleMode(enabled);
   }
 
   Future<void> stop() async {
-    await _handler.stop();
-    await _handler.seek(Duration.zero);
+    await _musicSrv.stop();
     currentTrackNotifier.value = null;
   }
 
@@ -169,6 +182,5 @@ class PageManagerService {
     isShuffleEnabledNotifier.dispose();
     isFirstTrackNotifier.dispose();
     isLastTrackNotifier.dispose();
-    _handler.dispose();
   }
 }

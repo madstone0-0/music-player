@@ -36,7 +36,6 @@ class ScanMediaViewModel extends GetxController {
     try {
       final scanned = await _repo.fullRescan(
         onProgress: (current, tot, path) {
-          debugPrint('Scanning: $path ($current / $tot)');
           total.value = tot;
           currentIndex.value = current;
           currentPath.value = path;

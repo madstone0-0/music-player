@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:music_player/common/color.dart';
-import 'package:music_player/models/splash.dart';
+import 'package:music_player/common/nav.dart';
+import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/screens/albums.dart';
 import 'package:music_player/screens/artists.dart';
 import 'package:music_player/screens/tracks.dart';
+import 'package:music_player/screens/widgets/search.dart';
 
 class Library extends StatefulWidget {
   const Library({super.key});
@@ -19,7 +20,8 @@ class _LibraryState extends State<Library> with SingleTickerProviderStateMixin {
   static const _tabs = <({String label, IconData icon})>[
     (label: 'Tracks', icon: Icons.music_note_outlined),
     (label: 'Albums', icon: Icons.album_outlined),
-    (label: 'Artists',    icon: Icons.person_outline),
+    (label: 'Artists', icon: Icons.people_outline),
+    (label: 'Album Artists', icon: Icons.person_outline),
     // (label: 'Playlists',  icon: Icons.queue_music_outlined),
     // (label: 'Genres',     icon: Icons.category_outlined),
   ];
@@ -59,8 +61,6 @@ class _LibraryState extends State<Library> with SingleTickerProviderStateMixin {
               style: textTheme.titleLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
             ),
 
-            // M3 IconButton.filledTonal gives the search icon a proper
-            // container rather than a raw icon floating in the app bar.
             actions: [
               Padding(
                 padding: const EdgeInsets.only(right: 8),
@@ -86,6 +86,7 @@ class _LibraryState extends State<Library> with SingleTickerProviderStateMixin {
             Tracks(),
             Albums(),
             Artists(),
+            Artists(grouping: ArtistGrouping.albumArtist),
             // Genres(),
             // Playlists(),
           ],
@@ -95,7 +96,15 @@ class _LibraryState extends State<Library> with SingleTickerProviderStateMixin {
   }
 
   void _openSearch() {
-    showSearch(context: context, delegate: _TrackSearchDelegate());
+    Get.to(
+      () => SearchScreen(
+        hint: 'Search songs, albums, artists…',
+        hintTitle: 'Search your library',
+        hintSubtitle: 'Find songs, albums and artists',
+        resultsBuilder: (context, query) => _SearchResults(query: query),
+      ),
+      transition: Transition.fadeIn,
+    );
   }
 }
 
@@ -114,12 +123,10 @@ class _StyledTabBar extends StatelessWidget implements PreferredSizeWidget {
 
     return TabBar(
       controller: controller,
-      // M3: secondary tab bar style — label indicator, no underline divider.
       tabAlignment: TabAlignment.start,
       isScrollable: true,
       dividerColor: Colors.transparent,
 
-      // Indicator: pill shape in primaryContainer, M3's recommended style.
       indicator: BoxDecoration(borderRadius: BorderRadius.circular(20), color: scheme.secondaryContainer),
       indicatorSize: TabBarIndicatorSize.tab,
       indicatorPadding: const EdgeInsets.symmetric(vertical: 6),
@@ -149,32 +156,6 @@ class _StyledTabBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-class _TrackSearchDelegate extends SearchDelegate<String> {
-  @override
-  String get searchFieldLabel => 'Search tracks…';
-
-  @override
-  ThemeData appBarTheme(BuildContext context) {
-    // Inherit the app theme so the search bar matches.
-    return Theme.of(context);
-  }
-
-  @override
-  List<Widget> buildActions(BuildContext context) => [
-    if (query.isNotEmpty) IconButton(onPressed: () => query = '', icon: const Icon(Icons.clear_rounded)),
-  ];
-
-  @override
-  Widget buildLeading(BuildContext context) =>
-      IconButton(onPressed: () => close(context, ''), icon: const Icon(Icons.arrow_back_rounded));
-
-  @override
-  Widget buildResults(BuildContext context) => _SearchResults(query: query);
-
-  @override
-  Widget buildSuggestions(BuildContext context) => query.isEmpty ? const SizedBox() : _SearchResults(query: query);
-}
-
 class _SearchResults extends StatelessWidget {
   const _SearchResults({required this.query});
 
@@ -182,8 +163,6 @@ class _SearchResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Wire to your TrackRepository / ViewModel when ready.
-    // Placeholder keeps the structure correct in the meantime.
     return Center(
       child: Text(
         'Results for "$query"',

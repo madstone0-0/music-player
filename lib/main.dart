@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:music_player/common/color.dart';
-import 'package:music_player/screens/splash.dart';
+import 'package:music_player/screens/home.dart';
+import 'package:music_player/screens/mainTab.dart';
 import 'package:music_player/services/AudioPlayerHandlerService.dart';
 import 'package:music_player/services/LocatorService.dart';
+import 'package:music_player/services/MusicService.dart';
 import 'package:music_player/services/PageManagerService.dart';
+import 'package:music_player/services/RouteObserverService.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 void main() async {
@@ -21,12 +24,26 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final _routeOb = RouteObserverService();
+
+  @override
+  void dispose() {
+    if (getIt.isRegistered<AudioPlayerHandlerService>()) {
+      getIt<AudioPlayerHandlerService>().dispose();
+    }
+    if (getIt.isRegistered<PageManagerService>()) {
+      getIt<PageManagerService>().dispose();
+    }
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      themeMode: ThemeMode.dark,       // or ThemeMode.system
-      theme:     AppTheme.light,
-      darkTheme:  AppTheme.dark,
+      themeMode: ThemeMode.dark,
+      navigatorObservers: [_routeOb],
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
       title: 'Music Player',
       debugShowCheckedModeBanner: false,
       home: const _PermissionGate(),
@@ -59,19 +76,16 @@ class _PermissionGateState extends State<_PermissionGate> {
     }
 
     await setupLocatorService();
-
     if (!mounted) return;
 
     getIt<PageManagerService>().init();
+    await getIt<MusicService>().restoreLastSession();
 
-    Get.off(() => const Splash());
+    Get.off(() => const MainTab());
   }
 
   Future<bool> _requestStoragePermission() async {
-    final results = await [
-      Permission.audio, // Android 13+ (TIRAMISU)
-      Permission.storage, // Android ≤ 12 / iOS fallback
-    ].request();
+    final results = await [Permission.audio, Permission.storage].request();
 
     return results.values.any((s) => s == PermissionStatus.granted || s == PermissionStatus.limited);
   }
@@ -151,8 +165,6 @@ class _DeniedView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          // If permanently denied the system dialog won't appear again —
-          // send the user to app settings instead.
           TextButton(
             onPressed: openAppSettings,
             child: Text('Open app settings', style: TextStyle(color: AppColor.secondaryText, fontSize: 13)),

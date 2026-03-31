@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:azlistview/azlistview.dart';
 import 'package:get/get.dart';
 import 'package:music_player/db/daos/track.dart';
@@ -5,12 +6,12 @@ import 'package:music_player/db/db.dart';
 import 'package:music_player/db/repo/track.dart';
 import 'package:music_player/services/LocatorService.dart';
 
-class AZAlbumItem extends ISuspensionBean {
-  final TrackData albumData; // Using a TrackData sample to represent the album
+class AZAlbum extends ISuspensionBean {
+  final TrackData albumData;
   final String tag;
   final int trackCount;
 
-  AZAlbumItem({required this.albumData, required this.tag, this.trackCount = 1});
+  AZAlbum({required this.albumData, required this.tag, this.trackCount = 1});
 
   @override
   String getSuspensionTag() => tag;
@@ -19,59 +20,64 @@ class AZAlbumItem extends ISuspensionBean {
 class AlbumsViewModel extends GetxController {
   final repo = getIt<TrackRepository>();
 
-  final allTracks = <TrackData>[].obs;
-  final azItms = <AZAlbumItem>[].obs;
-  final sortMode = SortMode.albumAsc.obs; // Default to Album sort
+  final azItms = <AZAlbum>[].obs;
+  final sortMode = SortMode.albumAsc.obs;
+  final isGrid = false.obs;
+
+  StreamSubscription? _albumSub;
 
   @override
   void onInit() {
     super.onInit();
-
-    // Watch for tracks and regroup them into albums whenever they change
-    ever(allTracks, (_) => _generateAlbumAZItems());
-
-    // Watch sort mode to re-fetch
-    ever(sortMode, (SortMode mode) => _fetchData());
-
+    ever(sortMode, (_) => _fetchData());
     _fetchData();
   }
 
   void _fetchData() {
-    allTracks.bindStream(repo.watchAll(mode: sortMode.value));
+    _albumSub?.cancel();
+
+    _albumSub = repo.watchGroupedAlbums(mode: sortMode.value).listen((groupedData) {
+      if (groupedData.isEmpty) {
+        azItms.value = [];
+        return;
+      }
+
+      final isYearSort = sortMode.value == SortMode.yearAsc || sortMode.value == SortMode.yearDesc;
+
+      final List<AZAlbum> mappedList = groupedData.map((data) {
+        final firstTrack = TrackData.fromJson(data);
+        final albumName = firstTrack.album ?? "Unknown Album";
+        final trackCount = data['trackCount'] as int;
+
+        String tag;
+
+        if (isYearSort) {
+          final year = firstTrack.year;
+          tag = year != null ? '${(year ~/ 10) * 10}s' : 'Unknown';
+        } else {
+          tag = albumName.trim().isNotEmpty ? albumName.trim()[0].toUpperCase() : '#';
+          if (!RegExp(r'[A-Z]').hasMatch(tag)) tag = '#';
+        }
+
+        return AZAlbum(albumData: firstTrack, tag: tag, trackCount: trackCount);
+      }).toList();
+
+      SuspensionUtil.setShowSuspensionStatus(mappedList);
+      azItms.value = mappedList;
+    });
   }
 
-  void _generateAlbumAZItems() {
-    if (allTracks.isEmpty) {
-      azItms.value = [];
-      return;
-    }
-
-    // Grouping tracks by Album Name to get unique Albums
-    final Map<String, List<TrackData>> grouped = {};
-    for (var track in allTracks) {
-      final key = track.album ?? "Unknown Album";
-      grouped.putIfAbsent(key, () => []).add(track);
-    }
-
-    final List<AZAlbumItem> mappedList = grouped.entries.map((entry) {
-      final firstTrack = entry.value.first;
-      final albumName = entry.key;
-
-      String tag = albumName.trim().isNotEmpty ? albumName.trim()[0].toUpperCase() : '#';
-      if (!RegExp(r'[A-Z]').hasMatch(tag)) tag = '#';
-
-      return AZAlbumItem(albumData: firstTrack, tag: tag, trackCount: entry.value.length);
-    }).toList();
-
-    SuspensionUtil.setShowSuspensionStatus(mappedList);
-    azItms.value = mappedList;
+  @override
+  void onClose() {
+    _albumSub?.cancel();
+    super.onClose();
   }
 
   void toggleSort(String category) {
-    if (category == 'Album') {
+    if (category == 'Title') {
       sortMode.value = (sortMode.value == SortMode.albumAsc) ? SortMode.albumDesc : SortMode.albumAsc;
-    } else if (category == 'Artist') {
-      sortMode.value = (sortMode.value == SortMode.artistAsc) ? SortMode.artistDesc : SortMode.artistAsc;
+    } else if (category == 'Year') {
+      sortMode.value = (sortMode.value == SortMode.yearAsc) ? SortMode.yearAsc : SortMode.yearDesc;
     }
   }
 }

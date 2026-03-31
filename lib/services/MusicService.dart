@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/db/repo/track.dart';
@@ -6,101 +8,146 @@ import 'package:music_player/services/AudioPlayerHandlerService.dart';
 import 'package:music_player/services/LocatorService.dart';
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:music_player/services/PageManagerService.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MusicService {
   final repo = getIt<TrackRepository>();
   final AudioPlayerHandlerService handler = getIt<AudioPlayerHandlerService>();
-  final PageManagerService page = getIt<PageManagerService>();
 
   Timer? _debounce;
   static const _debounceMs = 600;
 
-  void playDebounced(List<TrackData> tracks, int index, {bool shuffle = false}) {
+  ValueNotifier<List<MediaItem>> get Q => handler.Q;
+  ValueNotifier<MediaItem?> get curr => handler.curr;
+  Stream<PlayerState> get playerSS => handler.playerSS;
+  Stream<Duration> get posS => handler.posS;
+  Stream<Duration> get bufPosS => handler.bufPosS;
+  Stream<Duration?> get durS => handler.durS;
+  Stream<bool> get shuffleModeS => handler.shuffleModeS;
+
+  void play() => handler.play();
+
+  void pause() => handler.pause();
+
+  void seek(Duration position) => handler.seek(position);
+
+  void next() => handler.skipToNext();
+
+  void prev() => handler.skipToPrevious();
+
+  void skipTo(int index) => handler.skipToQueueItem(index);
+
+  void setRepeatMode(LoopMode mode) => handler.setRepeatMode(mode);
+
+  void setShuffleMode(bool enabled) => handler.setShuffleMode(enabled);
+
+  Future<void> stop() async => await handler.stop();
+
+  void playAllDebounced(List<TrackData> tracks, int index, {bool shuffle = false}) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: _debounceMs), () {
-      play(tracks, index: index, shuffle: shuffle);
+      playAll(tracks, index: index, shuffle: shuffle);
     });
   }
 
-  Future<void> play(List<TrackData> tracks, {int index = 0, bool shuffle = false, bool fromMiniPlayer = false}) async {
+  Future<void> playAll(List<TrackData> tracks, {int index = 0, bool shuffle = false, bool fromMiniPlayer = false}) async {
     if (fromMiniPlayer) return;
+    if (tracks.isEmpty) return;
 
-    final int safeIndex = index.clamp(0, tracks.isEmpty ? 0 : tracks.length - 1);
-    final List<MediaItem> Q = tracks.map((t) => t.toMediaItem()).toList();
-    if (shuffle) Q.shuffle();
+    final int safeIndex = index.clamp(0, tracks.length - 1);
+    final List<MediaItem> q = tracks.map((t) => t.toMediaItem()).toList();
 
-    page.setShuffle(false); // reset shuffle state in PageManager
-    await handler.setNewPlaylist(Q, safeIndex);
+    if (shuffle) {
+      await handler.setNewPlaylist(q, safeIndex);
+      await handler.setShuffleMode(true);
+    } else {
+      await handler.setNewPlaylist(q, safeIndex);
+      await handler.setShuffleMode(false);
+    }
+
     await handler.play();
   }
 
-  Future<void> playOne(TrackData track) async => play([track], index: 0);
+  Future<void> playOne(TrackData track) async => playAll([track], index: 0);
 
   Future<void> addToQueue(TrackData track) async => await handler.addQueueItem(track.toMediaItem());
 
-  Future<void> playNext(TrackData track) async => await handler.skipToNext();
-
-  // Future<void> updateTag(
-  //     TrackData track, {
-  //       String? title,
-  //       String? artist,
-  //       String? album,
-  //       String? genre,
-  //     }) async {
-  //   // 4a. Persist to Drift.
-  //   await db.trackDao.updateTag(
-  //     track.id,
-  //     title:  title,
-  //     artist: artist,
-  //     album:  album,
-  //     genre:  genre,
-  //   );
-  //
-  //   // 4b. Build an updated MediaItem and push it to the live handler
-  //   //     so the notification / lock-screen reflects the new tags immediately.
-  //   final updated = track
-  //       .toMediaItem()
-  //       .copyWith(
-  //     title:  title  ?? track.title,
-  //     artist: artist ?? track.artist,
-  //     album:  album  ?? track.album,
-  //     genre:  genre  ?? track.genre,
-  //   );
-  //
-  //   await handler.updateMediaItem(updated);
-  // }
-
-  // Future<void> playPlaylist(int playlistId, {int startIndex = 0}) async {
-  //   final tracks = await db.playlistDao.getTracksForPlaylist(playlistId);
-  //   await playAll(tracks, startIndex: startIndex);
-  // }
+  Future<void> playNext(TrackData track) async {
+    final currIdx = handler.currIdx;
+    final idx = (currIdx ?? -1) + 1;
+    await handler.addQueueItemAt(track.toMediaItem(), idx);
+  }
 
   Future<TrackData?> resolveCurrentTrack() async {
     final track = handler.curr.value;
     if (track == null) return null;
-    return repo.getById(int.parse(track.id));
+    final id = int.tryParse(track.id);
+    if (id == null) return null;
+    return repo.getById(id);
   }
 
   Future<void> syncQueueWithDb() async {
-    final live = handler.Q.value;
-    if (live.isEmpty) return;
+    final snapshot = handler.Q.value;
+    if (snapshot.isEmpty) return;
 
-    final ids = live.map((t) => t.id).toList();
-    final freshTracks = await repo.getByIds(ids.map((id) => int.parse(id)).toList());
-    final idToTrack = {for (final t in freshTracks) t.id: t};
-
-    final refreshed = ids
-        .where(idToTrack.containsKey)
-        .map(int.parse)
-        .map((id) => idToTrack[id]!)
-        .map((t) => t.toMediaItem())
+    final idPairs = snapshot
+        .map((item) {
+          final id = int.tryParse(item.id);
+          return id != null ? (item: item, id: id) : null;
+        })
+        .whereType<({MediaItem item, int id})>()
         .toList();
 
-    await handler.updateQueue(refreshed);
+    if (idPairs.isEmpty) return;
+
+    final freshTracks = await repo.getByIds(idPairs.map((p) => p.id).toList());
+    final idToTrack = {for (final t in freshTracks) t.id: t};
+
+    if (!_listEquals(handler.Q.value.map((e) => e.id).toList(), snapshot.map((e) => e.id).toList())) {
+      return;
+    }
+
+    for (final pair in idPairs) {
+      final fresh = idToTrack[pair.id];
+      if (fresh == null) continue;
+      await handler.updateMediaItem(fresh.toMediaItem());
+    }
   }
 
   void cancelDebounce() => _debounce?.cancel();
+
+  Future<void> restoreLastSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedIds = prefs.getStringList('last_queue_ids') ?? [];
+
+    if (savedIds.isEmpty) return;
+
+    final intIds = savedIds.map(int.tryParse).whereType<int>().toList();
+    if (intIds.isEmpty) return;
+
+    final tracks = await repo.getByIds(intIds);
+    final trackMap = {for (var t in tracks) t.id.toString(): t};
+
+    final restoredItems = savedIds.where(trackMap.containsKey).map((id) => trackMap[id]!.toMediaItem()).toList();
+
+    if (restoredItems.length != savedIds.length) {
+      debugPrint(
+        'MusicService.restoreLastSession: ${savedIds.length - restoredItems.length} '
+        'track(s) could not be restored (deleted from DB). '
+        'Playback will resume from the clamped index.',
+      );
+    }
+
+    await handler.restoreLastSession(restoredItems);
+  }
+
+  bool _listEquals(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 }

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:music_player/common/color.dart';
-import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/PageManagerService.dart';
 
-class PrimaryContols extends StatelessWidget {
-  const PrimaryContols({super.key, required this.page});
+class PrimaryControls extends StatelessWidget {
+  const PrimaryControls({super.key, required this.page});
 
   final PageManagerService page;
 
@@ -20,7 +18,7 @@ class PrimaryContols extends StatelessWidget {
         ValueListenableBuilder<bool>(
           valueListenable: page.isFirstTrackNotifier,
           builder: (context, isFirst, _) => IconButton(
-            onPressed: isFirst ? null : page.previous,
+            onPressed: isFirst ? null : page.prev,
             iconSize: 32,
             color: isFirst ? scheme.onSurface.withOpacity(0.3) : scheme.onSurface,
             icon: const Icon(Icons.skip_previous_rounded),

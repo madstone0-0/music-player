@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:music_player/models/splash.dart';
 import 'package:music_player/screens/home.dart';
 import 'package:music_player/screens/scanMedia.dart';
 import 'package:music_player/screens/library.dart';
@@ -16,12 +15,10 @@ class MainTab extends StatefulWidget {
 class _MainTabState extends State<MainTab> {
   int _selectedIndex = 0;
 
-  // Define the screens once to be used in the IndexedStack
   final List<Widget> _screens = const [Home(), Library(), ScanMedia()];
 
   @override
   Widget build(BuildContext context) {
-    final splashVM = Get.find<SplashViewModel>();
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -42,20 +39,12 @@ class _MainTabState extends State<MainTab> {
             _selectedIndex = index;
           });
         },
-        // M3 Tonal colors for the navigation bar
         backgroundColor: scheme.surfaceContainer,
         indicatorColor: scheme.secondaryContainer,
-        // The label behavior can be adjusted, but 'alwaysShow' is M3 default
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
 
         destinations: const [
-          NavigationDestination(
-            // Outline icon for inactive state
-            icon: Icon(Icons.home_outlined),
-            // Filled/Rounded icon for active state
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
+          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Home'),
           NavigationDestination(
             icon: Icon(Icons.library_music_outlined),
             selectedIcon: Icon(Icons.library_music_rounded),

@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/screens/mainPlayer.dart';
+import 'package:music_player/screens/widgets/trackCoverArt.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/PageManagerService.dart';
 
@@ -31,7 +33,7 @@ class MiniPlayer extends StatelessWidget {
             key: ValueKey(track.id),
             confirmDismiss: (direction) {
               if (direction == DismissDirection.startToEnd) {
-                page.previous();
+                page.prev();
               } else {
                 page.next();
               }
@@ -42,29 +44,28 @@ class MiniPlayer extends StatelessWidget {
               child: Card(
                 elevation: 0,
                 margin: EdgeInsets.zero,
-                // M3 standard for secondary floating elements
                 color: scheme.surfaceContainerHighest,
                 clipBehavior: Clip.antiAlias,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: InkWell(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(opaque: false, pageBuilder: (_, __, ___) => const MainPlayer()),
+                    Get.to(
+                      () => const MainPlayer(),
+                      routeName: "/MainPlayer",
+                      transition: Transition.downToUp,
+                      duration: const Duration(milliseconds: 300),
                     );
                   },
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // ── Edge-to-edge Progress ─────────────────────────────
                       _MiniProgress(page: page),
 
-                      // ── Track Info & Controls ─────────────────────────────
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                         child: Row(
                           children: [
-                            _TrackArtwork(track: track),
+                            TrackCoverArt(track: track, size: 48.0),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
@@ -91,6 +92,7 @@ class MiniPlayer extends StatelessWidget {
                               ),
                             ),
                             _MiniControls(page: page),
+                            SizedBox(height: MediaQuery.of(context).padding.bottom),
                           ],
                         ),
                       ),
@@ -105,8 +107,6 @@ class MiniPlayer extends StatelessWidget {
     );
   }
 }
-
-// ─── Edge-to-edge Progress ───────────────────────────────────────────────────
 
 class _MiniProgress extends StatelessWidget {
   const _MiniProgress({required this.page});
@@ -127,8 +127,6 @@ class _MiniProgress extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        // Using LinearProgressIndicator for a cleaner M3 mini-player look,
-        // as scrubbing is usually reserved for the main player.
         return LinearProgressIndicator(
           value: position / total,
           minHeight: 2.0,
@@ -139,8 +137,6 @@ class _MiniProgress extends StatelessWidget {
     );
   }
 }
-
-// ─── Playback Controls ────────────────────────────────────────────────────────
 
 class _MiniControls extends StatelessWidget {
   const _MiniControls({required this.page});
@@ -174,74 +170,6 @@ class _MiniControls extends StatelessWidget {
           onPressed: isPlaying ? page.pause : page.play,
         );
       },
-    );
-  }
-}
-
-// ─── Track artwork (Vinyl Style) ──────────────────────────────────────────────
-
-class _TrackArtwork extends StatelessWidget {
-  const _TrackArtwork({required this.track});
-
-  final MediaItem track;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    // Safer check for valid file paths
-    final path = track.artUri?.toFilePath();
-    final hasArtwork = path != null && path.isNotEmpty;
-
-    return Hero(
-      tag: 'currentArtwork',
-      child: SizedBox.square(
-        dimension: 48.0,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Artwork image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: hasArtwork
-                  ? Image.file(
-                      File(path!),
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _placeholder(scheme),
-                    )
-                  : _placeholder(scheme),
-            ),
-
-            // Vinyl ring overlay
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                border: Border.all(color: scheme.onSurface.withOpacity(0.1), width: 1),
-                borderRadius: BorderRadius.circular(24),
-              ),
-            ),
-
-            // Centre hole (blends with Card background)
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(6)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _placeholder(ColorScheme scheme) {
-    return Container(
-      width: 48,
-      height: 48,
-      color: scheme.surfaceContainer,
-      child: Icon(Icons.music_note_rounded, color: scheme.onSurfaceVariant),
     );
   }
 }

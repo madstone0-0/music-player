@@ -1,59 +1,47 @@
-import 'package:flutter/material.dart';
-import 'package:music_player/common/color.dart';
-import 'package:music_player/db/db.dart';
+import 'dart:io';
 
-class TrackRow extends StatelessWidget {
-  final TrackData track;
-  final VoidCallback onPressedPlay;
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:just_audio_background/just_audio_background.dart';
+import 'package:music_player/screens/widgets/coverArt.dart';
+import 'package:music_player/screens/widgets/trackCoverArt.dart';
+
+class TrackRow extends StatefulWidget {
+  const TrackRow({super.key, required this.track, required this.onPressed, this.isWeb = false});
+
+  final MediaItem track;
+  final bool isWeb;
   final VoidCallback onPressed;
-  const TrackRow({
-    super.key,
-    required this.track,
-    required this.onPressed,
-    required this.onPressedPlay,
-  });
 
   @override
+  State<TrackRow> createState() => _TrackRowState();
+}
+
+class _TrackRowState extends State<TrackRow> {
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          children: [
-            IconButton(
-              onPressed: onPressedPlay,
-              icon: Image.asset(
-                "assets/img/play_btn.png",
-                width: 25,
-                height: 25,
-              ),
-            ),
-            Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      track.title,
-                      maxLines: 1,
-                      style: TextStyle(
-                          color: AppColor.primaryText60,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700),
-                    ),
-                    Text(
-                      track.artist ?? "Unknown Artist",
-                      maxLines: 1,
-                      style: TextStyle(color: AppColor.secondaryText, fontSize: 10),
-                    )
-                  ],
-                )),
-          ],
-        ),
-        Divider(
-          color: Colors.white.withOpacity(0.07),
-          indent: 50,
-        ),
-      ],
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+
+    return ListTile(
+      onTap: widget.onPressed,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+
+      leading: TrackCoverArt(track: widget.track),
+
+      title: Text(
+        widget.track.title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: text.bodyLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(
+        widget.track.artist ?? "Unknown Artist",
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+      ),
     );
   }
 }
