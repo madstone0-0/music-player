@@ -76,7 +76,15 @@ class _AlbumTracksState extends State<AlbumTracks> {
                   stretch: true,
                   backgroundColor: scheme.surface,
                   flexibleSpace: FlexibleSpaceBar(
-                    title: Text(vm.albumName ?? "Unknown Album", style: text.titleMedium),
+                    // Left padding accounts for the pinned leading back button
+                    // (~56 dp) so the title never overlaps it when collapsed.
+                    titlePadding: const EdgeInsets.fromLTRB(56, 0, 16, 14),
+                    title: Text(
+                      vm.albumName ?? "Unknown Album",
+                      style: text.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     background: _buildLargeArt(firstTrack.artUri, scheme),
                   ),
                 ),

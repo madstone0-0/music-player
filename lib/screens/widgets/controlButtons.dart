@@ -152,7 +152,12 @@ class _SecondaryButton extends StatelessWidget {
             child: Icon(icon, size: 22),
           )
               : IconButton(onPressed: onTap, iconSize: 22, color: scheme.onSurfaceVariant, icon: Icon(icon)),
-          Text(label, style: text.labelSmall?.copyWith(color: active ? scheme.primary : scheme.onSurfaceVariant)),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: text.labelSmall?.copyWith(color: active ? scheme.primary : scheme.onSurfaceVariant),
+          ),
         ],
       ),
     );

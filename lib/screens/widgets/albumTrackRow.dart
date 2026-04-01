@@ -1,11 +1,8 @@
-import 'dart:io';
-
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/screens/widgets/coverArt.dart';
 
-class AlbumTrackRow extends StatefulWidget {
+class AlbumTrackRow extends StatelessWidget {
   const AlbumTrackRow({super.key, required this.track, required this.onPressed, this.onLongPress});
 
   final MediaItem track;
@@ -13,33 +10,28 @@ class AlbumTrackRow extends StatefulWidget {
   final VoidCallback? onLongPress;
 
   @override
-  State<AlbumTrackRow> createState() => _AlbumTrackRowState();
-}
-
-class _AlbumTrackRowState extends State<AlbumTrackRow> {
-  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    double size = 50.0;
-    debugPrint("Extras: ${widget.track.extras}");
+    const double size = 50.0;
+    final trackNo = track.extras?['trackNo'];
 
     return ListTile(
-      onTap: widget.onPressed,
-      onLongPress: widget.onLongPress,
+      onTap: onPressed,
+      onLongPress: onLongPress,
       contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 
-      leading: buildCoverArt(widget.track, size),
+      leading: buildCoverArt(track, size),
 
       title: Text(
-        widget.track.title,
+        track.title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: text.bodyLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
-        "${widget.track.artist ?? 'Unknown Artist'} • ${widget.track.extras!["trackNo"] ?? '#'}",
+        '${track.artist ?? 'Unknown Artist'} • ${trackNo ?? '#'}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),

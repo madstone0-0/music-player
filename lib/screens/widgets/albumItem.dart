@@ -44,6 +44,7 @@ class AlbumItem extends StatelessWidget {
       subtitle: Text(
         albumArtist,
         maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
       ),
     );
