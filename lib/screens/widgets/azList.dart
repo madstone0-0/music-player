@@ -3,15 +3,17 @@ import 'package:flutter/material.dart';
 
 class _AZGridRow<T extends ISuspensionBean> extends ISuspensionBean {
   final List<T> items;
+  // Pre-computed original indices avoid an O(n) indexOf search per item.
+  final List<int> indices;
   final String tag;
 
-  _AZGridRow({required this.items, required this.tag});
+  _AZGridRow({required this.items, required this.indices, required this.tag});
 
   @override
   String getSuspensionTag() => tag;
 }
 
-class AZList<T extends ISuspensionBean> extends StatelessWidget {
+class AZList<T extends ISuspensionBean> extends StatefulWidget {
   const AZList({
     super.key,
     required this.items,
@@ -30,55 +32,82 @@ class AZList<T extends ISuspensionBean> extends StatelessWidget {
   static const double indexBarWidth = 28.0;
   static const EdgeInsets itemPadding = EdgeInsets.only(bottom: 4.0, right: indexBarWidth);
 
-  // Groups flat items into chunks of rows per suspension tag
-  List<_AZGridRow<T>> _buildGridRows() {
-    List<_AZGridRow<T>> rows = [];
-    String currentTag = '';
-    List<T> currentChunk = [];
+  @override
+  State<AZList<T>> createState() => _AZListState<T>();
+}
 
-    for (var item in items) {
+class _AZListState<T extends ISuspensionBean> extends State<AZList<T>> {
+  // Cached grid rows so _buildGridRows() is never called during an animation frame.
+  List<_AZGridRow<T>>? _cachedGridRows;
+
+  @override
+  void didUpdateWidget(AZList<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Invalidate the cache whenever the source data or column count changes.
+    if (!identical(widget.items, oldWidget.items) ||
+        widget.gridCrossAxisCount != oldWidget.gridCrossAxisCount) {
+      _cachedGridRows = null;
+    }
+  }
+
+  // Groups flat items into rows, recording each item's original index so
+  // callers can avoid an O(n) indexOf() call per item.
+  List<_AZGridRow<T>> _buildGridRows() {
+    final List<_AZGridRow<T>> rows = [];
+    String currentTag = '';
+    var currentChunk = <T>[];
+    var currentIndices = <int>[];
+
+    for (int i = 0; i < widget.items.length; i++) {
+      final item = widget.items[i];
       final tag = item.getSuspensionTag();
       if (tag != currentTag) {
         if (currentChunk.isNotEmpty) {
-          rows.add(_AZGridRow(items: currentChunk, tag: currentTag));
+          rows.add(_AZGridRow(items: currentChunk, indices: currentIndices, tag: currentTag));
           currentChunk = [];
+          currentIndices = [];
         }
         currentTag = tag;
       }
 
       currentChunk.add(item);
-      if (currentChunk.length == gridCrossAxisCount) {
-        rows.add(_AZGridRow(items: currentChunk, tag: currentTag));
+      currentIndices.add(i);
+      if (currentChunk.length == widget.gridCrossAxisCount) {
+        rows.add(_AZGridRow(items: currentChunk, indices: currentIndices, tag: currentTag));
         currentChunk = [];
+        currentIndices = [];
       }
     }
 
     if (currentChunk.isNotEmpty) {
-      rows.add(_AZGridRow(items: currentChunk, tag: currentTag));
+      rows.add(_AZGridRow(items: currentChunk, indices: currentIndices, tag: currentTag));
     }
 
     SuspensionUtil.setShowSuspensionStatus(rows);
     return rows;
   }
 
+  List<_AZGridRow<T>> _getGridRows() => _cachedGridRows ??= _buildGridRows();
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    if (items.isEmpty) {
+    if (widget.items.isEmpty) {
       return Center(
-        child: Text(emptyMessage, style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant)),
+        child: Text(widget.emptyMessage, style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant)),
       );
     }
 
-    // Determine the data list to render based on layout mode
-    final List<ISuspensionBean> displayItems = gridCrossAxisCount > 1 ? _buildGridRows() : items;
+    // Determine the data list to render based on layout mode.
+    final List<ISuspensionBean> displayItems =
+        widget.gridCrossAxisCount > 1 ? _getGridRows() : widget.items;
 
     return AzListView(
       data: displayItems,
       itemCount: displayItems.length,
-      indexBarData: showIndexedBar ? SuspensionUtil.getTagIndexList(items) : [],
-      indexBarWidth: indexBarWidth,
+      indexBarData: widget.showIndexedBar ? SuspensionUtil.getTagIndexList(widget.items) : [],
+      indexBarWidth: AZList.indexBarWidth,
       indexBarOptions: IndexBarOptions(
         needRebuild: true,
         selectTextStyle: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
@@ -113,28 +142,30 @@ class AZList<T extends ISuspensionBean> extends StatelessWidget {
         );
       },
       itemBuilder: (context, index) {
-        if (gridCrossAxisCount > 1) {
+        if (widget.gridCrossAxisCount > 1) {
           final row = displayItems[index] as _AZGridRow<T>;
           return Padding(
             // Ensure the grid doesn't overlap the right-most AZ bar
-            padding: const EdgeInsets.only(right: indexBarWidth),
+            padding: const EdgeInsets.only(right: AZList.indexBarWidth),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children:
-                  row.items.map((item) {
-                    return Expanded(child: itemBuilder(context, item, items.indexOf(item)));
-                  }).toList()..addAll(
-                    List.generate(
-                      gridCrossAxisCount - row.items.length,
-                      (_) => const Expanded(child: SizedBox.shrink()),
-                    ),
-                  ),
+              children: [
+                ...row.items.asMap().entries.map((entry) {
+                  return Expanded(
+                    child: widget.itemBuilder(context, entry.value, row.indices[entry.key]),
+                  );
+                }),
+                ...List.generate(
+                  widget.gridCrossAxisCount - row.items.length,
+                  (_) => const Expanded(child: SizedBox.shrink()),
+                ),
+              ],
             ),
           );
         }
 
         // Standard List mode
-        return itemBuilder(context, displayItems[index] as T, index);
+        return widget.itemBuilder(context, displayItems[index] as T, index);
       },
     );
   }

@@ -18,7 +18,7 @@ class Artists extends StatefulWidget {
   State<Artists> createState() => _ArtistsState();
 }
 
-class _ArtistsState extends State<Artists> {
+class _ArtistsState extends State<Artists> with AutomaticKeepAliveClientMixin {
   late final ArtistsViewModel vm;
 
   @override
@@ -28,7 +28,11 @@ class _ArtistsState extends State<Artists> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(

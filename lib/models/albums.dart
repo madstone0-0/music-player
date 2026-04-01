@@ -42,28 +42,34 @@ class AlbumsViewModel extends GetxController {
         return;
       }
 
+      // Capture sort mode now so the microtask closure uses a consistent value.
       final isYearSort = sortMode.value == SortMode.yearAsc || sortMode.value == SortMode.yearDesc;
+      final snapshot = List<Map<String, dynamic>>.of(groupedData);
 
-      final List<AZAlbum> mappedList = groupedData.map((data) {
-        final firstTrack = TrackData.fromJson(data);
-        final albumName = firstTrack.album ?? "Unknown Album";
-        final trackCount = data['trackCount'] as int;
+      Future.microtask(() {
+        if (isClosed) return;
 
-        String tag;
+        final List<AZAlbum> mappedList = snapshot.map((data) {
+          final firstTrack = TrackData.fromJson(data);
+          final albumName = firstTrack.album ?? "Unknown Album";
+          final trackCount = data['trackCount'] as int;
 
-        if (isYearSort) {
-          final year = firstTrack.year;
-          tag = year != null ? '${(year ~/ 10) * 10}s' : 'Unknown';
-        } else {
-          tag = albumName.trim().isNotEmpty ? albumName.trim()[0].toUpperCase() : '#';
-          if (!RegExp(r'[A-Z]').hasMatch(tag)) tag = '#';
-        }
+          String tag;
 
-        return AZAlbum(albumData: firstTrack, tag: tag, trackCount: trackCount);
-      }).toList();
+          if (isYearSort) {
+            final year = firstTrack.year;
+            tag = year != null ? '${(year ~/ 10) * 10}s' : 'Unknown';
+          } else {
+            tag = albumName.trim().isNotEmpty ? albumName.trim()[0].toUpperCase() : '#';
+            if (!RegExp(r'[A-Z]').hasMatch(tag)) tag = '#';
+          }
 
-      SuspensionUtil.setShowSuspensionStatus(mappedList);
-      azItms.value = mappedList;
+          return AZAlbum(albumData: firstTrack, tag: tag, trackCount: trackCount);
+        }).toList();
+
+        SuspensionUtil.setShowSuspensionStatus(mappedList);
+        if (!isClosed) azItms.value = mappedList;
+      });
     });
   }
 
@@ -77,7 +83,7 @@ class AlbumsViewModel extends GetxController {
     if (category == 'Title') {
       sortMode.value = (sortMode.value == SortMode.albumAsc) ? SortMode.albumDesc : SortMode.albumAsc;
     } else if (category == 'Year') {
-      sortMode.value = (sortMode.value == SortMode.yearAsc) ? SortMode.yearAsc : SortMode.yearDesc;
+      sortMode.value = (sortMode.value == SortMode.yearAsc) ? SortMode.yearDesc : SortMode.yearAsc;
     }
   }
 }

@@ -19,7 +19,7 @@ class Tracks extends StatefulWidget {
   State<Tracks> createState() => _TracksState();
 }
 
-class _TracksState extends State<Tracks> {
+class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
   final player = getIt<MusicService>();
   final vm = Get.put(TracksViewModel());
 
@@ -46,7 +46,11 @@ class _TracksState extends State<Tracks> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(

@@ -40,30 +40,39 @@ class TracksViewModel extends GetxController {
       return;
     }
 
-    final List<AZTrack> mappedList = all.map((track) {
-      String rawString = '';
+    // Capture a snapshot of the values referenced inside the microtask so the
+    // closure doesn't read stale data if they change before it runs.
+    final snapshot = List<TrackData>.of(all);
+    final mode = sortMode.value;
 
-      // Determine which field to extract the first letter from
-      if (sortMode.value == SortMode.artistAsc || sortMode.value == SortMode.artistDesc) {
-        rawString = track.artist ?? 'Unknown Artist';
-      } else if (sortMode.value == SortMode.albumAsc || sortMode.value == SortMode.albumDesc) {
-        rawString = track.album ?? 'Unknown Album';
-      } else {
-        rawString = track.title;
-      }
+    Future.microtask(() {
+      if (isClosed) return;
 
-      // Extract the first letter and make it uppercase (Fallback to '#' for numbers/symbols)
-      String tag = rawString.isNotEmpty ? rawString[0].toUpperCase() : '#';
-      if (!RegExp(r'[A-Z]').hasMatch(tag)) {
-        tag = '#';
-      }
+      final List<AZTrack> mappedList = snapshot.map((track) {
+        String rawString = '';
 
-      return AZTrack(track: track, tag: tag);
-    }).toList();
+        // Determine which field to extract the first letter from
+        if (mode == SortMode.artistAsc || mode == SortMode.artistDesc) {
+          rawString = track.artist ?? 'Unknown Artist';
+        } else if (mode == SortMode.albumAsc || mode == SortMode.albumDesc) {
+          rawString = track.album ?? 'Unknown Album';
+        } else {
+          rawString = track.title;
+        }
 
-    // This utility calculates the headers and prepares the list for the sidebar
-    SuspensionUtil.setShowSuspensionStatus(mappedList);
-    azItms.value = mappedList;
+        // Extract the first letter and make it uppercase (Fallback to '#' for numbers/symbols)
+        String tag = rawString.isNotEmpty ? rawString[0].toUpperCase() : '#';
+        if (!RegExp(r'[A-Z]').hasMatch(tag)) {
+          tag = '#';
+        }
+
+        return AZTrack(track: track, tag: tag);
+      }).toList();
+
+      // This utility calculates the headers and prepares the list for the sidebar
+      SuspensionUtil.setShowSuspensionStatus(mappedList);
+      if (!isClosed) azItms.value = mappedList;
+    });
   }
 
   void toggleSort(String category) {
