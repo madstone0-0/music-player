@@ -9,6 +9,7 @@ import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/models/mainPlayer.dart';
 import 'package:music_player/screens/widgets/coverArt.dart';
+import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/trackCoverArt.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/PageManagerService.dart';
@@ -53,7 +54,22 @@ class MainPlayerState extends State<MainPlayer> {
             style: text.titleMedium?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
           ),
           centerTitle: true,
-          actions: [MoreMenu(scheme: scheme)],
+          actions: [
+            PopupMenu(
+              scheme: scheme,
+              items: [
+                PopupMenuItemData(value: 0, icon: Icons.playlist_add_rounded, label: 'Add to Playlist'),
+                PopupMenuItemData(value: 1, icon: Icons.info_outline, label: "Details"),
+                PopupMenuItemData(value: 2, icon: Icons.lyrics_outlined, label: "Lyrics"),
+              ],
+              onSelected: (v) {
+                switch (v) {
+                  case 0:
+                    break;
+                }
+              },
+            ),
+          ],
         ),
 
         body: ValueListenableBuilder<MediaItem?>(

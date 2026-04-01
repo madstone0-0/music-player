@@ -6,11 +6,11 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/screens/widgets/coverArt.dart';
 
 class AlbumTrackRow extends StatefulWidget {
-  const AlbumTrackRow({super.key, required this.track, required this.onPressed, this.isWeb = false});
+  const AlbumTrackRow({super.key, required this.track, required this.onPressed, this.onLongPress});
 
   final MediaItem track;
-  final bool isWeb;
   final VoidCallback onPressed;
+  final VoidCallback? onLongPress;
 
   @override
   State<AlbumTrackRow> createState() => _AlbumTrackRowState();
@@ -26,6 +26,7 @@ class _AlbumTrackRowState extends State<AlbumTrackRow> {
 
     return ListTile(
       onTap: widget.onPressed,
+      onLongPress: widget.onLongPress,
       contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 

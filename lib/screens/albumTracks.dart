@@ -2,10 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:music_player/db/daos/track.dart';
+import 'package:music_player/db/db.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/albumTracks.dart';
 import 'package:music_player/screens/widgets/albumTrackRow.dart';
 import 'package:music_player/screens/widgets/miniPlayer.dart';
+import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
 
@@ -20,7 +22,20 @@ class AlbumTracks extends StatefulWidget {
 
 class _AlbumTracksState extends State<AlbumTracks> {
   late final AlbumTracksViewModel vm;
-  final muiscSrv = getIt<MusicService>();
+  final player = getIt<MusicService>();
+
+  void _handleMenuSelection(int v, TrackData track) {
+    switch (v) {
+      case 0:
+        player.playNext(track);
+        break;
+      case 1:
+        player.addToQueue(track);
+        break;
+      case 2:
+        break;
+    }
+  }
 
   @override
   void initState() {
@@ -69,7 +84,21 @@ class _AlbumTracksState extends State<AlbumTracks> {
                       final track = vm.tracks[index];
                       return AlbumTrackRow(
                         track: track.toMediaItem(),
-                        onPressed: () => muiscSrv.playAll(vm.tracks, index: index),
+                        onPressed: () => player.playAll(vm.tracks, index: index),
+                        // On long press show a popup menu with options to add to queue, add to playlist, view album, view artist
+                        onLongPress: () => showModalBottomSheet(
+                          context: context,
+                          builder: (context) => PopupMenu(
+                            longPress: true,
+                            scheme: scheme,
+                            items: [
+                              PopupMenuItemData(value: 0, icon: Icons.queue_music_rounded, label: 'Play Next'),
+                              PopupMenuItemData(value: 1, icon: Icons.playlist_add_rounded, label: 'Add to Queue'),
+                              PopupMenuItemData(value: 2, icon: Icons.playlist_add_rounded, label: 'Add to Playlist'),
+                            ],
+                            onSelected: (v) => _handleMenuSelection(v, track),
+                          ),
+                        ),
                       );
                     }, childCount: vm.tracks.length),
                   ),

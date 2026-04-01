@@ -7,11 +7,11 @@ import 'package:music_player/screens/widgets/coverArt.dart';
 import 'package:music_player/screens/widgets/trackCoverArt.dart';
 
 class TrackRow extends StatefulWidget {
-  const TrackRow({super.key, required this.track, required this.onPressed, this.isWeb = false});
+  const TrackRow({super.key, required this.track, required this.onPressed, this.onLongPress});
 
   final MediaItem track;
-  final bool isWeb;
   final VoidCallback onPressed;
+  final VoidCallback? onLongPress;
 
   @override
   State<TrackRow> createState() => _TrackRowState();
@@ -25,6 +25,7 @@ class _TrackRowState extends State<TrackRow> {
 
     return ListTile(
       onTap: widget.onPressed,
+      onLongPress: widget.onLongPress,
       contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 
