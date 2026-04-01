@@ -125,7 +125,9 @@ class _StyledTabBar extends StatelessWidget implements PreferredSizeWidget {
   final List<({String label, IconData icon})> tabs;
 
   @override
-  Size get preferredSize => const Size.fromHeight(kTextTabBarHeight);
+  // kTextTabBarHeight (46) + TabBar's default indicatorWeight (2) = 48 px actual height.
+  // Declaring the full height prevents the SliverAppBar bottom from overflowing by 2 px.
+  Size get preferredSize => const Size.fromHeight(kTextTabBarHeight + 2);
 
   @override
   Widget build(BuildContext context) {
