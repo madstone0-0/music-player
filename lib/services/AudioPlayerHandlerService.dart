@@ -17,6 +17,48 @@ Future<void> initAudioService() async {
   );
 }
 
+class FixedShuffleOrder extends ShuffleOrder {
+  @override
+  final List<int> indices;
+
+  FixedShuffleOrder(List<int> indices) : indices = List<int>.from(indices);
+
+  @override
+  void clear() => indices.clear();
+
+  @override
+  void insert(int index, int count) {
+    final inserted = List.generate(count, (i) => index + i);
+    for (var i = 0; i < indices.length; i++) {
+      if (indices[i] >= index) {
+        indices[i] += count;
+      }
+    }
+    indices.addAll(inserted);
+  }
+
+  @override
+  void removeRange(int start, int end) {
+    final removedCount = end - start;
+    indices.removeWhere((i) => i >= start && i < end);
+    for (var i = 0; i < indices.length; i++) {
+      if (indices[i] >= end) {
+        indices[i] -= removedCount;
+      }
+    }
+  }
+
+  @override
+  void shuffle({int? initialIndex}) {
+    if (initialIndex == null) return;
+    final pos = indices.indexOf(initialIndex);
+    if (pos > 0) {
+      final curr = indices.removeAt(pos);
+      indices.insert(0, curr);
+    }
+  }
+}
+
 class AudioPlayerHandlerService {
   final player = AudioPlayer();
   final ValueNotifier<List<MediaItem>> Q = ValueNotifier([]);
@@ -54,6 +96,14 @@ class AudioPlayerHandlerService {
 
   int? get currIdx => player.currentIndex;
 
+  int? get currEffectiveIdx {
+    final raw = player.currentIndex;
+    if (raw == null) return null;
+    final effective = player.effectiveIndices;
+    final idx = effective.indexOf(raw);
+    return idx == -1 ? null : idx;
+  }
+
   SharedPreferences? _prefs;
 
   AudioPlayerHandlerService() {
@@ -83,13 +133,15 @@ class AudioPlayerHandlerService {
 
   void _listenForDurationChanges() {
     durS.listen((dur) {
-      final idx = currIdx;
-      final currQ = Q.value;
-      if (idx == null || idx < 0 || idx >= currQ.length) return;
+      final current = curr.value;
+      if (current == null) return;
 
-      final updated = currQ[idx].copyWith(duration: dur);
-      final next = List.of(currQ);
-      next[idx] = updated;
+      final effectiveIdx = Q.value.indexWhere((item) => item.id == current.id);
+      if (effectiveIdx == -1) return;
+
+      final updated = Q.value[effectiveIdx].copyWith(duration: dur);
+      final next = List.of(Q.value);
+      next[effectiveIdx] = updated;
       Q.value = next;
 
       if (curr.value?.id == updated.id) {
@@ -109,7 +161,6 @@ class AudioPlayerHandlerService {
 
       final items = sequence.map((src) => src.tag as MediaItem).toList();
       Q.value = items;
-
       curr.value = ss.currentSource?.tag as MediaItem?;
     });
   }
@@ -168,58 +219,166 @@ class AudioPlayerHandlerService {
   UriAudioSource _makeAudioSource(MediaItem itm) =>
       AudioSource.uri(Uri.parse((itm.extras?["url"] as String)), tag: itm);
 
-  List<UriAudioSource> _makeAudioSources(List<MediaItem> itm) => itm.map((i) => _makeAudioSource(i)).toList();
+  List<UriAudioSource> _makeAudioSources(List<MediaItem> items) => items.map(_makeAudioSource).toList();
 
-  Future<void> addQueueItem(MediaItem itm) async {
-    await player.addAudioSource(_makeAudioSource(itm));
-    Q.value = List.of(Q.value)..add(itm);
+  List<MediaItem> _rawQueueItems() {
+    return player.sequence.map((src) => src.tag as MediaItem).toList();
   }
 
-  Future<void> addQueueItems(List<MediaItem> itm) async {
-    await player.addAudioSources(_makeAudioSources(itm));
-    Q.value = List.of(Q.value)..addAll(itm);
+  List<int> _effectiveRawIndices() {
+    return List<int>.from(player.effectiveIndices);
   }
 
-  Future<void> addQueueItemAt(MediaItem itm, int idx) async {
-    await player.insertAudioSource(idx, _makeAudioSource(itm));
-    final updated = List.of(Q.value)..insert(idx, itm);
-    Q.value = updated;
+  Future<void> _rebuildQueuePreservingState({
+    required List<MediaItem> rawItems,
+    required bool shuffleEnabled,
+    List<int>? shuffleOrderIndices,
+  }) async {
+    final wasPlaying = player.playing;
+    final loopMode = player.loopMode;
+    final currentId = curr.value?.id;
+    final currentPos = player.position;
+
+    int? initialRawIndex;
+    if (currentId != null) {
+      final idx = rawItems.indexWhere((item) => item.id == currentId);
+      if (idx != -1) initialRawIndex = idx;
+    }
+    initialRawIndex ??= rawItems.isEmpty ? null : 0;
+
+    final shuffleOrder = shuffleOrderIndices != null ? FixedShuffleOrder(shuffleOrderIndices) : DefaultShuffleOrder();
+
+    await player.setAudioSources(
+      _makeAudioSources(rawItems),
+      initialIndex: initialRawIndex,
+      initialPosition: currentPos,
+      shuffleOrder: shuffleOrder,
+    );
+
+    await player.setLoopMode(loopMode);
+    await player.setShuffleModeEnabled(shuffleEnabled);
+
+    if (wasPlaying) {
+      await player.play();
+    } else {
+      await player.pause();
+    }
   }
 
-  Future<void> updateMediaItem(MediaItem itm) async {
-    final idx = Q.value.indexWhere((e) => e.id == itm.id);
-    if (idx == -1) return;
-    final updated = List.of(Q.value);
-    updated[idx] = itm;
-    Q.value = updated;
+  Future<void> addQueueItem(MediaItem item) async {
+    if (!player.shuffleModeEnabled) {
+      await player.addAudioSource(_makeAudioSource(item));
+      return;
+    }
+
+    final rawItems = _rawQueueItems()..add(item);
+    final order = _effectiveRawIndices()..add(rawItems.length - 1);
+
+    await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
   }
 
-  Future<void> updateQueue(List<MediaItem> itm) async {
-    await player.setAudioSources(_makeAudioSources(itm), initialIndex: 0, initialPosition: Duration.zero);
-    Q.value = List.of(itm);
+  Future<void> addQueueItems(List<MediaItem> items) async {
+    if (items.isEmpty) return;
+
+    if (!player.shuffleModeEnabled) {
+      await player.addAudioSources(_makeAudioSources(items));
+      return;
+    }
+
+    final rawItems = _rawQueueItems();
+    final order = _effectiveRawIndices();
+
+    for (final item in items) {
+      rawItems.add(item);
+      order.add(rawItems.length - 1);
+    }
+
+    await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
   }
 
-  Future<void> removeQueueItemAt(int idx) async {
-    await player.removeAudioSourceAt(idx);
-    final updated = List.of(Q.value)..removeAt(idx);
-    Q.value = updated;
+  Future<void> addQueueItemAt(MediaItem item, int effectiveIdx) async {
+    final visibleLen = Q.value.length;
+    final safeIdx = effectiveIdx.clamp(0, visibleLen);
+
+    if (!player.shuffleModeEnabled) {
+      await player.insertAudioSource(safeIdx, _makeAudioSource(item));
+      return;
+    }
+
+    final rawItems = _rawQueueItems()..add(item);
+    final newRawIndex = rawItems.length - 1;
+    final order = _effectiveRawIndices()..insert(safeIdx, newRawIndex);
+
+    await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
   }
 
-  Future<void> moveQueueItem(int currIdx, int newIdx) async {
-    await player.moveAudioSource(currIdx, newIdx);
+  Future<void> updateMediaItem(MediaItem item) async {
+    final rawItems = _rawQueueItems();
+    final rawIdx = rawItems.indexWhere((e) => e.id == item.id);
+    if (rawIdx == -1) return;
+
+    rawItems[rawIdx] = item;
+
+    await _rebuildQueuePreservingState(
+      rawItems: rawItems,
+      shuffleEnabled: player.shuffleModeEnabled,
+      shuffleOrderIndices: player.shuffleModeEnabled ? _effectiveRawIndices() : null,
+    );
+  }
+
+  Future<void> updateQueue(List<MediaItem> items) async {
+    await player.setAudioSources(_makeAudioSources(items), initialIndex: 0, initialPosition: Duration.zero);
+  }
+
+  Future<void> removeQueueItemAt(int effectiveIdx) async {
+    if (effectiveIdx < 0 || effectiveIdx >= Q.value.length) return;
+
+    if (!player.shuffleModeEnabled) {
+      await player.removeAudioSourceAt(effectiveIdx);
+      return;
+    }
+
+    final rawItems = _rawQueueItems();
+    final order = _effectiveRawIndices();
+    final rawIdx = order[effectiveIdx];
+
+    rawItems.removeAt(rawIdx);
+
+    final nextOrder = <int>[];
+    for (final idx in order) {
+      if (idx == rawIdx) continue;
+      nextOrder.add(idx > rawIdx ? idx - 1 : idx);
+    }
+
+    await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: nextOrder);
+  }
+
+  Future<void> moveQueueItem(int fromEffectiveIdx, int toEffectiveIdx) async {
+    if (fromEffectiveIdx < 0 || fromEffectiveIdx >= Q.value.length) return;
+    if (toEffectiveIdx < 0 || toEffectiveIdx >= Q.value.length) return;
+
+    if (!player.shuffleModeEnabled) {
+      await player.moveAudioSource(fromEffectiveIdx, toEffectiveIdx);
+      return;
+    }
+
+    final rawItems = _rawQueueItems();
+    final order = _effectiveRawIndices();
+
+    final movedRawIdx = order.removeAt(fromEffectiveIdx);
+    order.insert(toEffectiveIdx, movedRawIdx);
+
+    await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
   }
 
   Future<void> removeQueueItemIndex(int idx) async {
-    await player.removeAudioSourceAt(idx);
-    final updated = List.of(Q.value)..removeAt(idx);
-    Q.value = updated;
+    await removeQueueItemAt(idx);
   }
 
-  Future<void> setNewPlaylist(List<MediaItem> itm, int idx) async {
+  Future<void> setNewPlaylist(List<MediaItem> items, int idx) async {
     await player.clearAudioSources();
-    Q.value = List.of(itm);
-    if (itm.isNotEmpty) {
-      await player.setAudioSources(_makeAudioSources(itm), initialIndex: idx, initialPosition: Duration.zero);
+    if (items.isNotEmpty) {
+      await player.setAudioSources(_makeAudioSources(items), initialIndex: idx, initialPosition: Duration.zero);
     }
   }
 
@@ -229,10 +388,12 @@ class AudioPlayerHandlerService {
 
   Future<void> seek(Duration pos) => player.seek(pos);
 
-  Future<void> skipToQueueItem(int idx) async {
-    if (idx < 0 || idx >= Q.value.length) return;
-    final newIdx = player.shuffleModeEnabled ? player.shuffleIndices[idx] : idx;
-    await player.seek(Duration.zero, index: newIdx);
+  Future<void> skipToQueueItem(int effectiveIdx) async {
+    if (effectiveIdx < 0 || effectiveIdx >= Q.value.length) return;
+
+    final rawIndex = player.shuffleModeEnabled ? player.effectiveIndices[effectiveIdx] : effectiveIdx;
+
+    await player.seek(Duration.zero, index: rawIndex);
   }
 
   Future<void> skipToNext() => player.seekToNext();
@@ -248,9 +409,13 @@ class AudioPlayerHandlerService {
   Future<void> setRepeatMode(LoopMode loopMode) => player.setLoopMode(loopMode);
 
   Future<void> setShuffleMode(bool enabled) async {
-    await player.setShuffleModeEnabled(enabled);
+    if (enabled == player.shuffleModeEnabled) return;
+
     if (enabled) {
       await player.shuffle();
+      await player.setShuffleModeEnabled(true);
+    } else {
+      await player.setShuffleModeEnabled(false);
     }
   }
 

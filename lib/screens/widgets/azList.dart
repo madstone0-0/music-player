@@ -18,7 +18,7 @@ class AZList<T extends ISuspensionBean> extends StatelessWidget {
     required this.itemBuilder,
     this.emptyMessage = 'No items found',
     this.showIndexedBar = true,
-    this.gridCrossAxisCount = 1, // Default to List mode
+    this.gridCrossAxisCount = 1,
   });
 
   final List<T> items;
