@@ -54,9 +54,9 @@ class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
     super.build(context);
     final scheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      body: Column(
+    return ColoredBox(
+      color: scheme.surface,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SortSection<SortMode>(

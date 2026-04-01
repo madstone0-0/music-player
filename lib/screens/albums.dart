@@ -38,9 +38,9 @@ class _AlbumsState extends State<Albums> with AutomaticKeepAliveClientMixin {
     super.build(context);
     final scheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      body: Column(
+    return ColoredBox(
+      color: scheme.surface,
+      child: Column(
         children: [
           Row(
             children: [

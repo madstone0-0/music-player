@@ -106,9 +106,12 @@ class _AZListState<T extends ISuspensionBean> extends State<AZList<T>> {
 
     final List<ISuspensionBean> displayItems = widget.gridCrossAxisCount > 1 ? _getGridRows() : widget.items;
 
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return AzListView(
       data: displayItems,
       itemCount: displayItems.length,
+      padding: EdgeInsets.only(bottom: bottomPadding),
       indexBarData: widget.showIndexedBar ? SuspensionUtil.getTagIndexList(widget.items) : [],
       indexBarWidth: AZList.indexBarWidth,
       itemBuilder: (context, index) {
