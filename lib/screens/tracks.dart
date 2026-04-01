@@ -21,11 +21,14 @@ class Tracks extends StatefulWidget {
 
 class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
   final player = getIt<MusicService>();
-  final vm = Get.put(TracksViewModel());
+  late final TracksViewModel vm;
 
   @override
   void initState() {
     super.initState();
+    // Library pre-registers this VM in its own initState; find the existing
+    // instance to avoid a redundant allocation.
+    vm = Get.isRegistered<TracksViewModel>() ? Get.find<TracksViewModel>() : Get.put(TracksViewModel());
   }
 
   void _handleMenuSelection(int v, TrackData track) {

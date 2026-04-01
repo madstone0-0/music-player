@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/daos/track.dart';
+import 'package:music_player/models/albums.dart';
+import 'package:music_player/models/artists.dart';
+import 'package:music_player/models/tracks.dart';
 import 'package:music_player/screens/albums.dart';
 import 'package:music_player/screens/artists.dart';
 import 'package:music_player/screens/tracks.dart';
@@ -30,6 +33,21 @@ class _LibraryState extends State<Library> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
+
+    // Pre-register the Tracks ViewModel synchronously so its DB query starts
+    // before the first build frame — the tab screen will find the existing
+    // instance instead of re-creating it.
+    Get.put(TracksViewModel());
+
+    // Pre-register the non-default tab ViewModels after the first frame has
+    // been rendered.  This gives the Tracks query a head-start while ensuring
+    // Albums / Artists / Album Artists data is already loading long before the
+    // user swipes to those tabs.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.put(AlbumsViewModel());
+      Get.put(ArtistsViewModel(grouping: ArtistGrouping.artist), tag: ArtistGrouping.artist.name);
+      Get.put(ArtistsViewModel(grouping: ArtistGrouping.albumArtist), tag: ArtistGrouping.albumArtist.name);
+    });
   }
 
   @override

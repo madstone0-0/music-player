@@ -24,7 +24,12 @@ class _ArtistsState extends State<Artists> with AutomaticKeepAliveClientMixin {
   @override
   void initState() {
     super.initState();
-    vm = Get.put(ArtistsViewModel(grouping: widget.grouping), tag: widget.grouping.name);
+    // Library pre-registers this VM via addPostFrameCallback; find the existing
+    // instance to avoid a redundant allocation.
+    final tag = widget.grouping.name;
+    vm = Get.isRegistered<ArtistsViewModel>(tag: tag)
+        ? Get.find<ArtistsViewModel>(tag: tag)
+        : Get.put(ArtistsViewModel(grouping: widget.grouping), tag: tag);
   }
 
   @override

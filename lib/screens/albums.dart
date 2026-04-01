@@ -22,11 +22,14 @@ class Albums extends StatefulWidget {
 class _AlbumsState extends State<Albums> with AutomaticKeepAliveClientMixin {
   _AlbumsState();
 
-  final vm = Get.put(AlbumsViewModel());
+  late final AlbumsViewModel vm;
 
   @override
   void initState() {
     super.initState();
+    // Library pre-registers this VM via addPostFrameCallback; find the existing
+    // instance to avoid a redundant allocation.
+    vm = Get.isRegistered<AlbumsViewModel>() ? Get.find<AlbumsViewModel>() : Get.put(AlbumsViewModel());
   }
 
   @override
