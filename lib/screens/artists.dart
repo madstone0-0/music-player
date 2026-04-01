@@ -18,17 +18,24 @@ class Artists extends StatefulWidget {
   State<Artists> createState() => _ArtistsState();
 }
 
-class _ArtistsState extends State<Artists> {
+class _ArtistsState extends State<Artists> with AutomaticKeepAliveClientMixin {
   late final ArtistsViewModel vm;
 
   @override
   void initState() {
     super.initState();
-    vm = Get.put(ArtistsViewModel(grouping: widget.grouping), tag: widget.grouping.name);
+    final tag = widget.grouping.name;
+    vm = Get.isRegistered<ArtistsViewModel>(tag: tag)
+        ? Get.find<ArtistsViewModel>(tag: tag)
+        : Get.put(ArtistsViewModel(grouping: widget.grouping), tag: tag);
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(

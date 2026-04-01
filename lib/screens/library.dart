@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/daos/track.dart';
+import 'package:music_player/models/albums.dart';
+import 'package:music_player/models/artists.dart';
+import 'package:music_player/models/tracks.dart';
 import 'package:music_player/screens/albums.dart';
 import 'package:music_player/screens/artists.dart';
 import 'package:music_player/screens/tracks.dart';
@@ -30,6 +33,13 @@ class _LibraryState extends State<Library> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
+    Get.put(TracksViewModel());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.put(AlbumsViewModel());
+      Get.put(ArtistsViewModel(grouping: ArtistGrouping.artist), tag: ArtistGrouping.artist.name);
+      Get.put(ArtistsViewModel(grouping: ArtistGrouping.albumArtist), tag: ArtistGrouping.albumArtist.name);
+    });
   }
 
   @override

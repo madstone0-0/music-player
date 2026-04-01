@@ -19,18 +19,23 @@ class Albums extends StatefulWidget {
   State<Albums> createState() => _AlbumsState();
 }
 
-class _AlbumsState extends State<Albums> {
+class _AlbumsState extends State<Albums> with AutomaticKeepAliveClientMixin {
   _AlbumsState();
 
-  final vm = Get.put(AlbumsViewModel());
+  late final AlbumsViewModel vm;
 
   @override
   void initState() {
     super.initState();
+    vm = Get.isRegistered<AlbumsViewModel>() ? Get.find<AlbumsViewModel>() : Get.put(AlbumsViewModel());
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(

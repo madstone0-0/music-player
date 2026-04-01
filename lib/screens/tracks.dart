@@ -19,14 +19,12 @@ class Tracks extends StatefulWidget {
   State<Tracks> createState() => _TracksState();
 }
 
-class _TracksState extends State<Tracks> {
+class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
   final player = getIt<MusicService>();
-  final vm = Get.put(TracksViewModel());
+  late final TracksViewModel vm;
 
   @override
-  void initState() {
-    super.initState();
-  }
+  bool get wantKeepAlive => true;
 
   void _handleMenuSelection(int v, TrackData track) {
     switch (v) {
@@ -46,7 +44,14 @@ class _TracksState extends State<Tracks> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    vm = Get.isRegistered<TracksViewModel>() ? Get.find<TracksViewModel>() : Get.put(TracksViewModel());
+  }
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(

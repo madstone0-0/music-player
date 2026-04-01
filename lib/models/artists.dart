@@ -62,13 +62,22 @@ class ArtistsViewModel extends GetxController {
       azItms.value = [];
       return;
     }
-    final mapped = all.map((artist) {
-      String tag = artist.name.isNotEmpty ? artist.name[0].toUpperCase() : '#';
-      if (!RegExp(r'[A-Z]').hasMatch(tag)) tag = '#';
-      return AZArtist(artist: artist, tag: tag);
-    }).toList();
-    SuspensionUtil.setShowSuspensionStatus(mapped);
-    azItms.value = mapped;
+
+    final snapshot = List<ArtistData>.of(all);
+
+    Future.microtask(() {
+      if (isClosed) return;
+
+      final mapped = all.map((artist) {
+        String tag = artist.name.isNotEmpty ? artist.name[0].toUpperCase() : '#';
+        if (!RegExp(r'[A-Z]').hasMatch(tag)) tag = '#';
+        return AZArtist(artist: artist, tag: tag);
+      }).toList();
+
+      SuspensionUtil.setShowSuspensionStatus(mapped);
+
+      if (!isClosed) azItms.value = mapped;
+    });
   }
 
   void toggleSort(String category) {

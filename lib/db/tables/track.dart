@@ -1,6 +1,12 @@
 import 'package:drift/drift.dart';
 
 @TableIndex(name: "title_artist", columns: {#title, #artist})
+@TableIndex(name: "path", columns: {#path})
+@TableIndex(name: "artist_album", columns: {#artist, #album})
+@TableIndex(name: "album_artist_album", columns: {#albumArtist, #album})
+@TableIndex(name: "artist", columns: {#artist})
+@TableIndex(name: "album", columns: {#album})
+@TableIndex(name: "albumArtist", columns: {#albumArtist})
 class Track extends Table {
   IntColumn get id => integer().autoIncrement()();
 
