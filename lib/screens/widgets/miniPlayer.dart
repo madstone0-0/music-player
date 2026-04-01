@@ -40,7 +40,12 @@ class MiniPlayer extends StatelessWidget {
               return Future.value(false);
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              padding: EdgeInsets.fromLTRB(
+                8.0,
+                4.0,
+                8.0,
+                4.0 + MediaQuery.of(context).padding.bottom,
+              ),
               child: Card(
                 elevation: 0,
                 margin: EdgeInsets.zero,
@@ -92,7 +97,6 @@ class MiniPlayer extends StatelessWidget {
                               ),
                             ),
                             _MiniControls(page: page),
-                            SizedBox(height: MediaQuery.of(context).padding.bottom),
                           ],
                         ),
                       ),

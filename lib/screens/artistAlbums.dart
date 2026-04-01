@@ -6,6 +6,7 @@ import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/models/artistAlbums.dart';
 import 'package:music_player/models/artists.dart';
 import 'package:music_player/screens/albumTracks.dart';
+import 'package:music_player/screens/widgets/miniPlayer.dart';
 
 class ArtistAlbums extends StatefulWidget {
   const ArtistAlbums({super.key, required this.artistName, this.grouping = ArtistGrouping.artist});
@@ -33,6 +34,7 @@ class _ArtistAlbumsState extends State<ArtistAlbums> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
+    final bottomInset = kMiniPlayerHeight + MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -50,36 +52,42 @@ class _ArtistAlbumsState extends State<ArtistAlbums> {
           style: text.titleLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
         ),
       ),
-      body: Obx(() {
-        final albums = vm.albums;
+      body: Stack(
+        children: [
+          Obx(() {
+            final albums = vm.albums;
 
-        if (albums.isEmpty) {
-          return Center(
-            child: Text('No albums found', style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
-          );
-        }
+            if (albums.isEmpty) {
+              return Center(
+                child: Text('No albums found', style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+              );
+            }
 
-        return GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            // Extra room below the square artwork for title + subtitle.
-            childAspectRatio: 0.78,
-          ),
-          itemCount: albums.length,
-          itemBuilder: (context, index) => _AlbumCard(
-            album: albums[index],
-            onTap: () => Get.to(
-              () => const AlbumTracks(),
-              // id: NESTED_NAV_ID,
-              arguments: {"album": albums[index].album, "artist": widget.artistName},
-              transition: Transition.rightToLeftWithFade,
-            ),
-          ),
-        );
-      }),
+            return GridView.builder(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                // Extra room below the square artwork for title + subtitle.
+                childAspectRatio: 0.78,
+              ),
+              itemCount: albums.length,
+              itemBuilder: (context, index) => _AlbumCard(
+                album: albums[index],
+                onTap: () => Get.to(
+                  () => const AlbumTracks(),
+                  // id: NESTED_NAV_ID,
+                  arguments: {"album": albums[index].album, "artist": widget.artistName},
+                  transition: Transition.rightToLeftWithFade,
+                ),
+              ),
+            );
+          }),
+
+          const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
+        ],
+      ),
     );
   }
 }

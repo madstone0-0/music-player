@@ -221,9 +221,9 @@ class _LinearSeekBar extends StatelessWidget {
           data: SliderTheme.of(context).copyWith(
             trackHeight: 3,
             activeTrackColor: scheme.primary,
-            inactiveTrackColor: scheme.primary.withOpacity(0.2),
+            inactiveTrackColor: scheme.primary.withValues(alpha: 0.2),
             thumbColor: scheme.primary,
-            overlayColor: scheme.primary.withOpacity(0.12),
+            overlayColor: scheme.primary.withValues(alpha: 0.12),
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
             overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
           ),

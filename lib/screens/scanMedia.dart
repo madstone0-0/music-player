@@ -83,7 +83,7 @@ class _IdleView extends StatelessWidget {
           // ── Overwrite Toggle ──────────────────────────────────────────
           Container(
             decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest.withOpacity(0.5),
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Obx(
