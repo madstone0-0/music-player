@@ -91,7 +91,16 @@ class _AZListState<T extends ISuspensionBean> extends State<AZList<T>> {
 
     if (widget.items.isEmpty) {
       return Center(
-        child: Text(widget.emptyMessage, style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            widget.emptyMessage,
+            style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant),
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       );
     }
 

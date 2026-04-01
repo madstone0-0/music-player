@@ -72,7 +72,9 @@ class _AlbumsState extends State<Albums> with AutomaticKeepAliveClientMixin {
                 gridCrossAxisCount: vm.isGrid.value ? 2 : 1,
                 emptyMessage: 'No albums found, try scanning',
                 itemBuilder: (context, item, index) => Padding(
-                  padding: AZList.itemPadding,
+                  padding: vm.isGrid.value
+                      ? const EdgeInsets.all(8.0)
+                      : AZList.itemPadding,
                   child: AlbumItem(
                     item: item,
                     isGrid: vm.isGrid.value,
