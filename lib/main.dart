@@ -40,7 +40,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      themeMode: ThemeMode.dark,
+      themeMode: ThemeMode.system,
       navigatorObservers: [_routeOb],
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

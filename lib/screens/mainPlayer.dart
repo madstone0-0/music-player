@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:math';
+import 'dart:math' show min;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -99,19 +99,19 @@ class _PlayerBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    final width = MediaQuery.sizeOf(context).width;
+    final size = MediaQuery.sizeOf(context);
 
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Flexible(child: SizedBox(height: 12)),
+            const SizedBox(height: 12),
 
-            _ArtworkWithSeek(track: track, page: page, vm: vm, width: width),
+            _ArtworkWithSeek(track: track, page: page, vm: vm, screenSize: size),
 
-            const Flexible(child: SizedBox(height: 20)),
+            const SizedBox(height: 20),
 
             Text(
               track.title,
@@ -130,18 +130,18 @@ class _PlayerBody extends StatelessWidget {
               style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
 
-            const Flexible(child: SizedBox(height: 20)),
+            const SizedBox(height: 20),
 
             _LinearSeekBar(page: page),
 
             const SizedBox(height: 8),
             _Timestamps(page: page),
 
-            const Flexible(child: SizedBox(height: 24)),
+            const SizedBox(height: 24),
 
             PrimaryControls(page: page),
 
-            const Spacer(),
+            const SizedBox(height: 16),
 
             SecondaryControls(page: page),
 
@@ -154,19 +154,20 @@ class _PlayerBody extends StatelessWidget {
 }
 
 class _ArtworkWithSeek extends StatelessWidget {
-  const _ArtworkWithSeek({required this.track, required this.page, required this.vm, required this.width});
+  const _ArtworkWithSeek({required this.track, required this.page, required this.vm, required this.screenSize});
 
   final MainPlayerViewModel vm;
   final MediaItem track;
   final PageManagerService page;
-  final double width;
+  final Size screenSize;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    // Cap artwork at 300 so it doesn't crowd content on small screens.
-    final size = (width * 0.70).clamp(0.0, 300.0);
+    // Clamp artwork by both width and height so it stays proportionate in
+    // landscape orientation, where the available height is very limited.
+    final size = (screenSize.width * 0.70).clamp(0.0, min(screenSize.height * 0.42, 300.0));
 
     return Hero(
       tag: 'currentArtwork',
@@ -221,9 +222,9 @@ class _LinearSeekBar extends StatelessWidget {
           data: SliderTheme.of(context).copyWith(
             trackHeight: 3,
             activeTrackColor: scheme.primary,
-            inactiveTrackColor: scheme.primary.withOpacity(0.2),
+            inactiveTrackColor: scheme.primary.withValues(alpha: 0.2),
             thumbColor: scheme.primary,
-            overlayColor: scheme.primary.withOpacity(0.12),
+            overlayColor: scheme.primary.withValues(alpha: 0.12),
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
             overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
           ),

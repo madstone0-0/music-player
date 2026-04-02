@@ -60,12 +60,15 @@ class _IdleView extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.manage_search_rounded, size: 72, color: scheme.primary),
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.manage_search_rounded, size: 72, color: scheme.primary),
           const SizedBox(height: 28),
           Text(
             'Scan your device for audio files',
@@ -83,7 +86,7 @@ class _IdleView extends StatelessWidget {
           // ── Overwrite Toggle ──────────────────────────────────────────
           Container(
             decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest.withOpacity(0.5),
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Obx(
@@ -113,6 +116,8 @@ class _IdleView extends StatelessWidget {
             ),
           ),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -130,69 +135,74 @@ class _ScanningView extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Animated progress ring
-          Obx(
-            () => SizedBox.square(
-              dimension: 120,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    value: vm.total.value == 0 ? null : vm.progress,
-                    strokeWidth: 6,
-                    color: scheme.primary,
-                    backgroundColor: scheme.primaryContainer,
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Animated progress ring
+              Obx(
+                () => SizedBox.square(
+                  dimension: 120,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        value: vm.total.value == 0 ? null : vm.progress,
+                        strokeWidth: 6,
+                        color: scheme.primary,
+                        backgroundColor: scheme.primaryContainer,
+                      ),
+                      if (vm.total.value > 0)
+                        Text(
+                          '${(vm.progress * 100).round()}%',
+                          style: text.headlineSmall?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.bold),
+                        ),
+                    ],
                   ),
-                  if (vm.total.value > 0)
-                    Text(
-                      '${(vm.progress * 100).round()}%',
-                      style: text.headlineSmall?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.bold),
-                    ),
-                ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 32),
+              const SizedBox(height: 32),
 
-          Obx(
-            () => Text(
-              vm.total.value == 0 ? 'Discovering files…' : '${vm.currentIndex.value} of ${vm.total.value} files',
-              style: text.titleMedium?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Currently processing file name
-          Obx(() {
-            final name = vm.currentPath.value.isNotEmpty ? vm.currentPath.value.split('/').last : '';
-            return Text(
-              name,
-              style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            );
-          }),
-          const SizedBox(height: 32),
-
-          // Linear bar below for granular progress
-          Obx(
-            () => ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: vm.total.value == 0 ? null : vm.progress,
-                minHeight: 4,
-                color: scheme.primary,
-                backgroundColor: scheme.surfaceContainerHighest,
+              Obx(
+                () => Text(
+                  vm.total.value == 0 ? 'Discovering files…' : '${vm.currentIndex.value} of ${vm.total.value} files',
+                  style: text.titleMedium?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
+                ),
               ),
-            ),
+              const SizedBox(height: 8),
+
+              // Currently processing file name
+              Obx(() {
+                final name = vm.currentPath.value.isNotEmpty ? vm.currentPath.value.split('/').last : '';
+                return Text(
+                  name,
+                  style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                );
+              }),
+              const SizedBox(height: 32),
+
+              // Linear bar below for granular progress
+              Obx(
+                () => ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: vm.total.value == 0 ? null : vm.progress,
+                    minHeight: 4,
+                    color: scheme.primary,
+                    backgroundColor: scheme.surfaceContainerHighest,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -210,40 +220,45 @@ class _DoneView extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.check_circle_rounded, color: scheme.primary, size: 72),
-          const SizedBox(height: 24),
-          Text(
-            'Scan complete',
-            style: text.headlineSmall?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.check_circle_rounded, color: scheme.primary, size: 72),
+              const SizedBox(height: 24),
+              Text(
+                'Scan complete',
+                style: text.headlineSmall?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Obx(
+                () => Text(
+                  '${vm.doneCount.value} tracks synced with library',
+                  style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ),
+              const SizedBox(height: 48),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton(
+                  onPressed: () => Get.offAllNamed('/library', id: NESTED_NAV_ID),
+                  style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  child: const Text('Go to Library', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: vm.reset,
+                child: Text('Scan again', style: text.labelLarge?.copyWith(color: scheme.primary)),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Obx(
-            () => Text(
-              '${vm.doneCount.value} tracks synced with library',
-              style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-          ),
-          const SizedBox(height: 48),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: FilledButton(
-              onPressed: () => Get.offAllNamed('/library', id: NESTED_NAV_ID),
-              style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              child: const Text('Go to Library', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: vm.reset,
-            child: Text('Scan again', style: text.labelLarge?.copyWith(color: scheme.primary)),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -261,44 +276,49 @@ class _ErrorView extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline_rounded, color: scheme.error, size: 72),
-          const SizedBox(height: 24),
-          Text(
-            'Scan failed',
-            style: text.headlineSmall?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 12),
-          Obx(
-            () => Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: scheme.errorContainer, borderRadius: BorderRadius.circular(8)),
-              child: Text(
-                vm.errorMessage.value,
-                style: text.bodySmall?.copyWith(color: scheme.onErrorContainer),
-                textAlign: TextAlign.center,
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline_rounded, color: scheme.error, size: 72),
+              const SizedBox(height: 24),
+              Text(
+                'Scan failed',
+                style: text.headlineSmall?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
               ),
-            ),
-          ),
-          const SizedBox(height: 48),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: FilledButton(
-              onPressed: vm.startScan,
-              style: FilledButton.styleFrom(
-                backgroundColor: scheme.error,
-                foregroundColor: scheme.onError,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              const SizedBox(height: 12),
+              Obx(
+                () => Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: scheme.errorContainer, borderRadius: BorderRadius.circular(8)),
+                  child: Text(
+                    vm.errorMessage.value,
+                    style: text.bodySmall?.copyWith(color: scheme.onErrorContainer),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
-              child: const Text('Retry', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            ),
+              const SizedBox(height: 48),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton(
+                  onPressed: vm.startScan,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: scheme.error,
+                    foregroundColor: scheme.onError,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Retry', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

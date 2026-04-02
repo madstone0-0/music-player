@@ -48,7 +48,7 @@ class TrackCoverArt extends StatelessWidget {
                 width: size,
                 height: size,
                 decoration: BoxDecoration(
-                  border: Border.all(color: scheme.onSurface.withOpacity(0.1), width: 1),
+                  border: Border.all(color: scheme.onSurface.withValues(alpha: 0.1), width: 1),
                   shape: BoxShape.circle,
                 ),
               ),

@@ -91,15 +91,27 @@ class _AZListState<T extends ISuspensionBean> extends State<AZList<T>> {
 
     if (widget.items.isEmpty) {
       return Center(
-        child: Text(widget.emptyMessage, style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            widget.emptyMessage,
+            style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant),
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       );
     }
 
     final List<ISuspensionBean> displayItems = widget.gridCrossAxisCount > 1 ? _getGridRows() : widget.items;
 
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return AzListView(
       data: displayItems,
       itemCount: displayItems.length,
+      padding: EdgeInsets.only(bottom: bottomPadding),
       indexBarData: widget.showIndexedBar ? SuspensionUtil.getTagIndexList(widget.items) : [],
       indexBarWidth: AZList.indexBarWidth,
       itemBuilder: (context, index) {

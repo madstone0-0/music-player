@@ -38,9 +38,9 @@ class _ArtistsState extends State<Artists> with AutomaticKeepAliveClientMixin {
     super.build(context);
     final scheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      body: Column(
+    return ColoredBox(
+      color: scheme.surface,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(

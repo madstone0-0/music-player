@@ -65,7 +65,14 @@ class PopupMenu extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: scheme.onSurfaceVariant),
           const SizedBox(width: 12),
-          Text(label, style: TextStyle(color: scheme.onSurface, fontSize: 13)),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(color: scheme.onSurface, fontSize: 13),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

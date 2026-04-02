@@ -25,13 +25,8 @@ class AppTheme {
       error: const Color(0xffCF6679),
     );
 
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      fontFamily: 'Circular Std',
-
+    return _buildTheme(scheme).copyWith(
       scaffoldBackgroundColor: scheme.surfaceContainerLowest,
-
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surfaceContainerLowest,
         surfaceTintColor: Colors.transparent,
@@ -45,6 +40,43 @@ class AppTheme {
           fontWeight: FontWeight.w600,
         ),
       ),
+    );
+  }
+
+  static ThemeData get light {
+    final scheme = ColorScheme.fromSeed(
+      seedColor: _seedPrimary,
+      brightness: Brightness.light,
+      primary: _seedPrimary,
+      secondary: _seedSecondary,
+      tertiary: _seedTertiary,
+    );
+
+    return _buildTheme(scheme).copyWith(
+      scaffoldBackgroundColor: scheme.surface,
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        elevation: 0,
+        iconTheme: IconThemeData(color: scheme.onSurface),
+        titleTextStyle: TextStyle(
+          fontFamily: 'Circular Std',
+          color: scheme.onSurface,
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  /// Shared component-level theme configuration.  Each getter above applies it
+  /// then overrides the brightness-specific surface/appBar colours with copyWith.
+  static ThemeData _buildTheme(ColorScheme scheme) {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      fontFamily: 'Circular Std',
 
       cardTheme: CardThemeData(
         color: scheme.surfaceContainer,
@@ -67,9 +99,9 @@ class AppTheme {
 
       sliderTheme: SliderThemeData(
         activeTrackColor: scheme.primary,
-        inactiveTrackColor: scheme.primary.withOpacity(0.2),
+        inactiveTrackColor: scheme.primary.withValues(alpha: 0.2),
         thumbColor: scheme.primary,
-        overlayColor: scheme.primary.withOpacity(0.12),
+        overlayColor: scheme.primary.withValues(alpha: 0.12),
         trackHeight: 3,
         thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
         overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
@@ -79,7 +111,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: _seedPrimary,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: _seedPrimary.withOpacity(0.3),
+          disabledBackgroundColor: _seedPrimary.withValues(alpha: 0.3),
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -97,14 +129,14 @@ class AppTheme {
       searchBarTheme: SearchBarThemeData(
         elevation: const WidgetStatePropertyAll(0),
         backgroundColor: WidgetStatePropertyAll(scheme.surfaceContainerHigh),
-        overlayColor: WidgetStatePropertyAll(scheme.onSurface.withOpacity(0.04)),
-        side: WidgetStatePropertyAll(BorderSide(color: scheme.outline.withOpacity(0.3))),
+        overlayColor: WidgetStatePropertyAll(scheme.onSurface.withValues(alpha: 0.04)),
+        side: WidgetStatePropertyAll(BorderSide(color: scheme.outline.withValues(alpha: 0.3))),
         shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
         hintStyle: WidgetStatePropertyAll(TextStyle(color: scheme.onSurfaceVariant, fontSize: 14)),
         textStyle: WidgetStatePropertyAll(TextStyle(color: scheme.onSurface, fontSize: 14, fontFamily: 'Circular Std')),
       ),
 
-      dividerTheme: DividerThemeData(color: scheme.outlineVariant.withOpacity(0.4), thickness: 1, space: 32),
+      dividerTheme: DividerThemeData(color: scheme.outlineVariant.withValues(alpha: 0.4), thickness: 1, space: 32),
 
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: scheme.surfaceContainerLow,
@@ -122,33 +154,16 @@ class AppTheme {
 
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: scheme.primary,
-        linearTrackColor: scheme.primary.withOpacity(0.08),
-        circularTrackColor: scheme.primary.withOpacity(0.12),
+        linearTrackColor: scheme.primary.withValues(alpha: 0.08),
+        circularTrackColor: scheme.primary.withValues(alpha: 0.12),
       ),
 
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
           foregroundColor: scheme.onSurface,
-          highlightColor: scheme.onSurface.withOpacity(0.08),
+          highlightColor: scheme.onSurface.withValues(alpha: 0.08),
         ),
       ),
-    );
-  }
-
-  static ThemeData get light {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: _seedPrimary,
-      brightness: Brightness.light,
-      primary: _seedPrimary,
-      secondary: _seedSecondary,
-      tertiary: _seedTertiary,
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      fontFamily: 'Circular Std',
-      scaffoldBackgroundColor: scheme.surface,
     );
   }
 }
@@ -170,13 +185,13 @@ class AppColor {
 
   static Color get primaryText => _scheme.onSurface;
 
-  static Color get primaryText80 => _scheme.onSurface.withOpacity(0.8);
+  static Color get primaryText80 => _scheme.onSurface.withValues(alpha: 0.8);
 
-  static Color get primaryText60 => _scheme.onSurface.withOpacity(0.6);
+  static Color get primaryText60 => _scheme.onSurface.withValues(alpha: 0.6);
 
-  static Color get primaryText35 => _scheme.onSurface.withOpacity(0.35);
+  static Color get primaryText35 => _scheme.onSurface.withValues(alpha: 0.35);
 
-  static Color get primaryText28 => _scheme.onSurface.withOpacity(0.28);
+  static Color get primaryText28 => _scheme.onSurface.withValues(alpha: 0.28);
 
   static Color get secondaryText => _scheme.onSurfaceVariant;
 

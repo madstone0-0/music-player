@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
@@ -48,6 +49,7 @@ class _AlbumTracksState extends State<AlbumTracks> {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final screenWidth = MediaQuery.sizeOf(context).width;
+    final bottomInset = kMiniPlayerHeight + MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -55,10 +57,12 @@ class _AlbumTracksState extends State<AlbumTracks> {
         children: [
           Obx(() {
             if (vm.tracks.isEmpty) {
-              return Text(
-                "No tracks found for this album",
-                style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant),
-                textAlign: TextAlign.center,
+              return Center(
+                child: Text(
+                  "No tracks found for this album",
+                  style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant),
+                  textAlign: TextAlign.center,
+                ),
               );
             }
 
@@ -72,20 +76,27 @@ class _AlbumTracksState extends State<AlbumTracks> {
                   stretch: true,
                   backgroundColor: scheme.surface,
                   flexibleSpace: FlexibleSpaceBar(
-                    title: Text(vm.albumName ?? "Unknown Album", style: text.titleMedium),
+                    // Left padding accounts for the pinned leading back button
+                    // (~56 dp) so the title never overlaps it when collapsed.
+                    titlePadding: const EdgeInsets.fromLTRB(56, 0, 16, 14),
+                    title: Text(
+                      vm.albumName ?? "Unknown Album",
+                      style: text.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     background: _buildLargeArt(firstTrack.artUri, scheme),
                   ),
                 ),
 
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 80), // Added 80px bottom padding
+                  padding: EdgeInsets.fromLTRB(8, 8, 8, bottomInset),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final track = vm.tracks[index];
                       return AlbumTrackRow(
                         track: track.toMediaItem(),
                         onPressed: () => player.playAll(vm.tracks, index: index),
-                        // On long press show a popup menu with options to add to queue, add to playlist, view album, view artist
                         onLongPress: () => showModalBottomSheet(
                           context: context,
                           builder: (context) => PopupMenu(
@@ -107,7 +118,7 @@ class _AlbumTracksState extends State<AlbumTracks> {
             );
           }),
 
-          // const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
+          const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
         ],
       ),
     );
@@ -134,3 +145,4 @@ class _AlbumTracksState extends State<AlbumTracks> {
     );
   }
 }
+

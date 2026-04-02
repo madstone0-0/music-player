@@ -20,7 +20,7 @@ class PrimaryControls extends StatelessWidget {
           builder: (context, isFirst, _) => IconButton(
             onPressed: isFirst ? null : page.prev,
             iconSize: 32,
-            color: isFirst ? scheme.onSurface.withOpacity(0.3) : scheme.onSurface,
+            color: isFirst ? scheme.onSurface.withValues(alpha: 0.3) : scheme.onSurface,
             icon: const Icon(Icons.skip_previous_rounded),
           ),
         ),
@@ -63,7 +63,7 @@ class PrimaryControls extends StatelessWidget {
           builder: (context, isLast, _) => IconButton(
             onPressed: isLast ? null : page.next,
             iconSize: 32,
-            color: isLast ? scheme.onSurface.withOpacity(0.3) : scheme.onSurface,
+            color: isLast ? scheme.onSurface.withValues(alpha: 0.3) : scheme.onSurface,
             icon: const Icon(Icons.skip_next_rounded),
           ),
         ),
@@ -152,7 +152,12 @@ class _SecondaryButton extends StatelessWidget {
             child: Icon(icon, size: 22),
           )
               : IconButton(onPressed: onTap, iconSize: 22, color: scheme.onSurfaceVariant, icon: Icon(icon)),
-          Text(label, style: text.labelSmall?.copyWith(color: active ? scheme.primary : scheme.onSurfaceVariant)),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: text.labelSmall?.copyWith(color: active ? scheme.primary : scheme.onSurfaceVariant),
+          ),
         ],
       ),
     );
