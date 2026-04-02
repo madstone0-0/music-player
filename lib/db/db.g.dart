@@ -50,6 +50,7 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL COLLATE NOCASE',
   );
   static const VerificationMeta _artistMeta = const VerificationMeta('artist');
   @override
@@ -59,6 +60,7 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+    $customConstraints: 'COLLATE NOCASE',
   );
   static const VerificationMeta _albumArtistMeta = const VerificationMeta(
     'albumArtist',
@@ -70,6 +72,7 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+    $customConstraints: 'COLLATE NOCASE',
   );
   static const VerificationMeta _albumMeta = const VerificationMeta('album');
   @override
@@ -79,6 +82,7 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+    $customConstraints: 'COLLATE NOCASE',
   );
   static const VerificationMeta _genreMeta = const VerificationMeta('genre');
   @override
@@ -88,6 +92,7 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+    $customConstraints: 'COLLATE NOCASE',
   );
   static const VerificationMeta _yearMeta = const VerificationMeta('year');
   @override
@@ -710,12 +715,42 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'title_artist',
     'CREATE INDEX title_artist ON track (title, artist)',
   );
+  late final Index path = Index('path', 'CREATE INDEX path ON track (path)');
+  late final Index artistAlbum = Index(
+    'artist_album',
+    'CREATE INDEX artist_album ON track (artist, album)',
+  );
+  late final Index albumArtistAlbum = Index(
+    'album_artist_album',
+    'CREATE INDEX album_artist_album ON track (album_artist, album)',
+  );
+  late final Index artist = Index(
+    'artist',
+    'CREATE INDEX artist ON track (artist)',
+  );
+  late final Index album = Index(
+    'album',
+    'CREATE INDEX album ON track (album)',
+  );
+  late final Index albumArtist = Index(
+    'albumArtist',
+    'CREATE INDEX albumArtist ON track (album_artist)',
+  );
   late final TrackDao trackDao = TrackDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [track, titleArtist];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    track,
+    titleArtist,
+    path,
+    artistAlbum,
+    albumArtistAlbum,
+    artist,
+    album,
+    albumArtist,
+  ];
 }
 
 typedef $$TrackTableCreateCompanionBuilder =

@@ -167,7 +167,7 @@ class _ArtworkWithSeek extends StatelessWidget {
 
     // Clamp artwork by both width and height so it stays proportionate in
     // landscape orientation, where the available height is very limited.
-    final size = (screenSize.width * 0.70).clamp(0.0, min(screenSize.height * 0.42, 300.0));
+    final double size = (screenSize.width * 0.70).clamp(0.0, min(screenSize.height * 0.42, 300.0));
 
     return Hero(
       tag: 'currentArtwork',

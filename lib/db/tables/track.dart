@@ -14,15 +14,15 @@ class Track extends Table {
 
   TextColumn get path => text().unique()();
 
-  TextColumn get title => text()();
+  TextColumn get title => text().customConstraint("NOT NULL COLLATE NOCASE")();
 
-  TextColumn get artist => text().nullable()();
+  TextColumn get artist => text().nullable().customConstraint("COLLATE NOCASE")();
 
-  TextColumn get albumArtist => text().nullable()();
+  TextColumn get albumArtist => text().nullable().customConstraint("COLLATE NOCASE")();
 
-  TextColumn get album => text().nullable()();
+  TextColumn get album => text().nullable().customConstraint("COLLATE NOCASE")();
 
-  TextColumn get genre => text().nullable()();
+  TextColumn get genre => text().nullable().customConstraint("COLLATE NOCASE")();
 
   IntColumn get year => integer().nullable()();
 
