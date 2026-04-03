@@ -11,7 +11,14 @@ extension TrackMapper on TrackData {
       album: album,
       genre: genre,
       artUri: coverPath != null && coverPath!.isNotEmpty ? Uri.file(coverPath!) : null,
-      extras: {'url': 'file://$path', "trackNo": trackNo, "year": year, "albumArtist": albumArtist, "path": path},
+      extras: {
+        'url': 'file://$path',
+        "trackNo": trackNo,
+        "year": year,
+        "albumArtist": albumArtist,
+        "path": path,
+        "id": id,
+      },
     );
   }
 }
@@ -29,6 +36,22 @@ extension MediaItemMapper on MediaItem {
       album: Value(album),
       genre: Value(genre),
       coverPath: Value(coverPath),
+    );
+  }
+
+  TrackData toTrackData() {
+    final coverPath = artUri?.toFilePath();
+    final id = extras?["id"] ?? -1;
+    final path = extras?["path"] as String? ?? '';
+    return TrackData(
+      id: id,
+      title: title,
+      artist: artist,
+      album: album,
+      genre: genre,
+      coverPath: coverPath,
+      path: path,
+      isIndexed: true,
     );
   }
 }

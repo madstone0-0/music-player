@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:music_player/common/nav.dart';
+import 'package:music_player/models/mainTab.dart';
 import 'package:music_player/models/scanMedia.dart';
+import 'package:music_player/screens/library.dart';
+import 'package:music_player/screens/mainTab.dart';
 
 class ScanMedia extends StatefulWidget {
   const ScanMedia({super.key});
@@ -69,53 +72,53 @@ class _IdleView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.manage_search_rounded, size: 72, color: scheme.primary),
-          const SizedBox(height: 28),
-          Text(
-            'Scan your device for audio files',
-            style: text.titleLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'This will read your Music folder and index all audio files into the library.',
-            style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.5),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
+              const SizedBox(height: 28),
+              Text(
+                'Scan your device for audio files',
+                style: text.titleLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'This will read your Music folder and index all audio files into the library.',
+                style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
 
-          // ── Overwrite Toggle ──────────────────────────────────────────
-          Container(
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Obx(
-              () => SwitchListTile(
-                value: vm.overwrite.value,
-                onChanged: (val) => vm.overwrite.value = val,
-                activeThumbColor: scheme.primary,
-                title: Text('Force Overwrite', style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-                subtitle: Text(
-                  'Re-read ID3 tags for all files, even if they haven\'t changed.',
-                  style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              // ── Overwrite Toggle ──────────────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Obx(
+                  () => SwitchListTile(
+                    value: vm.overwrite.value,
+                    onChanged: (val) => vm.overwrite.value = val,
+                    activeThumbColor: scheme.primary,
+                    title: Text('Force Overwrite', style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                    subtitle: Text(
+                      'Re-read ID3 tags for all files, even if they haven\'t changed.',
+                      style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
 
-          const SizedBox(height: 40),
+              const SizedBox(height: 40),
 
-          // ── Action Button ─────────────────────────────────────────────
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: FilledButton(
-              onPressed: vm.startScan,
-              style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              child: const Text('Start Scan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            ),
-          ),
-        ],
+              // ── Action Button ─────────────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton(
+                  onPressed: vm.startScan,
+                  style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  child: const Text('Start Scan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -246,7 +249,11 @@ class _DoneView extends StatelessWidget {
                 width: double.infinity,
                 height: 52,
                 child: FilledButton(
-                  onPressed: () => Get.offAllNamed('/library', id: NESTED_NAV_ID),
+                  onPressed: () {
+                    final mainTabVM = Get.find<MainTabViewModel>();
+                    mainTabVM.changeTab(Tabs.LIBRARY);
+                    Get.off(() => MainTab());
+                  },
                   style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   child: const Text('Go to Library', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 ),

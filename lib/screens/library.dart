@@ -23,8 +23,8 @@ class _LibraryState extends State<Library> with SingleTickerProviderStateMixin {
   static const _tabs = <({String label, IconData icon})>[
     (label: 'Tracks', icon: Icons.music_note_outlined),
     (label: 'Albums', icon: Icons.album_outlined),
-    (label: 'Artists', icon: Icons.people_outline),
     (label: 'Album Artists', icon: Icons.person_outline),
+    (label: 'Artists', icon: Icons.people_outline),
     // (label: 'Playlists',  icon: Icons.queue_music_outlined),
     // (label: 'Genres',     icon: Icons.category_outlined),
   ];
@@ -95,8 +95,8 @@ class _LibraryState extends State<Library> with SingleTickerProviderStateMixin {
           children: const [
             Tracks(),
             Albums(),
-            Artists(),
             Artists(grouping: ArtistGrouping.albumArtist),
+            Artists(),
             // Genres(),
             // Playlists(),
           ],

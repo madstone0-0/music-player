@@ -14,11 +14,11 @@ class MiniPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final page = getIt<PageManagerService>();
+    final playerState = getIt<PlayerStateService>();
     final scheme = Theme.of(context).colorScheme;
 
     return ValueListenableBuilder<MediaItem?>(
-      valueListenable: page.currentTrackNotifier,
+      valueListenable: playerState.currentTrackNotifier,
       builder: (context, track, __) {
         if (track == null) return const SizedBox.shrink();
 
@@ -27,25 +27,20 @@ class MiniPlayer extends StatelessWidget {
           direction: DismissDirection.down,
           onDismissed: (_) {
             Feedback.forLongPress(context);
-            page.stop();
+            playerState.stop();
           },
           child: Dismissible(
             key: ValueKey(track.id),
             confirmDismiss: (direction) {
               if (direction == DismissDirection.startToEnd) {
-                page.prev();
+                playerState.prev();
               } else {
-                page.next();
+                playerState.next();
               }
               return Future.value(false);
             },
             child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                8.0,
-                4.0,
-                8.0,
-                4.0 + MediaQuery.of(context).padding.bottom,
-              ),
+              padding: EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0 + MediaQuery.of(context).padding.bottom),
               child: Card(
                 elevation: 0,
                 margin: EdgeInsets.zero,
@@ -54,17 +49,26 @@ class MiniPlayer extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: InkWell(
                   onTap: () {
-                    Get.to(
-                      () => const MainPlayer(),
-                      routeName: "/MainPlayer",
-                      transition: Transition.downToUp,
-                      duration: const Duration(milliseconds: 300),
+                    Get.generalDialog(
+                      pageBuilder: (_, __, ___) => const MainPlayer(),
+                      barrierDismissible: true,
+                      barrierLabel: 'MainPlayer',
+                      barrierColor: Colors.black54,
+                      transitionDuration: const Duration(milliseconds: 150),
+                      transitionBuilder: (context, animation, secondaryAnimation, child) {
+                        final offset = Tween<Offset>(
+                          begin: const Offset(0, 1),
+                          end: Offset.zero,
+                        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+
+                        return SlideTransition(position: offset, child: child);
+                      },
                     );
                   },
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _MiniProgress(page: page),
+                      _MiniProgress(page: playerState),
 
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
@@ -96,7 +100,7 @@ class MiniPlayer extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            _MiniControls(page: page),
+                            _MiniControls(page: playerState),
                           ],
                         ),
                       ),
@@ -115,7 +119,7 @@ class MiniPlayer extends StatelessWidget {
 class _MiniProgress extends StatelessWidget {
   const _MiniProgress({required this.page});
 
-  final PageManagerService page;
+  final PlayerStateService page;
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +149,7 @@ class _MiniProgress extends StatelessWidget {
 class _MiniControls extends StatelessWidget {
   const _MiniControls({required this.page});
 
-  final PageManagerService page;
+  final PlayerStateService page;
 
   @override
   Widget build(BuildContext context) {

@@ -46,8 +46,8 @@ class _ArtistsState extends State<Artists> with AutomaticKeepAliveClientMixin {
           Row(
             children: [
               Expanded(
-                child: SortSection<SortMode>(
-                  options: const [SortChipOption(label: 'Name', asc: SortMode.artistAsc, desc: SortMode.artistDesc)],
+                child: SortSection<TrackSortMode>(
+                  options: const [SortChipOption(label: 'Name', asc: TrackSortMode.artistAsc, desc: TrackSortMode.artistDesc)],
                   currentMode: vm.sortMode,
                   onToggle: vm.toggleSort,
                 ),

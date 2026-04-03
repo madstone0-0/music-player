@@ -1,11 +1,10 @@
 import 'dart:io';
 
-import "package:audiotags/audiotags.dart";
+import 'package:audiotags/audiotags.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player/db/db.dart';
-import 'package:music_player/utils/utils.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:music_player/services/CoverArtStore.dart';
 
 class AudioTaggingService {
   static Future<Tag?> readTag(String path) async {
@@ -22,20 +21,20 @@ class AudioTaggingService {
     final fileModifiedDate = await File(path).lastModified();
 
     try {
-      var tag = await readTag(path);
+      final tag = await readTag(path);
+
       if (tag == null) {
-        return TrackCompanion.insert(path: path, title: fallbackTitle);
+        return TrackCompanion.insert(
+          path: path,
+          title: fallbackTitle,
+          lastModified: Value(fileModifiedDate),
+          isIndexed: const Value(true),
+        );
       }
 
       String? coverPath;
       if (tag.pictures.isNotEmpty) {
-        coverPath = await coverPathOf(path);
-        final coverFile = File(coverPath);
-
-        if (!coverFile.existsSync()) {
-          // Lower the quality of the image to reduce file size
-          await coverFile.writeAsBytes(await compressImage(tag.pictures.first, quality: 50));
-        }
+        coverPath = await CoverArtStore.put(tag.pictures.first);
       }
 
       final title = (tag.title != null && tag.title!.trim().isNotEmpty) ? tag.title! : fallbackTitle;
@@ -51,15 +50,27 @@ class AudioTaggingService {
         genre: Value(tag.genre),
         coverPath: Value(coverPath),
         lastModified: Value(fileModifiedDate),
+        isIndexed: const Value(true),
       );
     } catch (e) {
       debugPrint('Tag read failed for $path: $e');
-      return TrackCompanion.insert(path: path, title: fallbackTitle);
+      return TrackCompanion.insert(
+        path: path,
+        title: fallbackTitle,
+        lastModified: Value(fileModifiedDate),
+        isIndexed: const Value(true),
+      );
     }
   }
 
   static void write(TrackData track) async {
-    var tag = Tag(title: track.title, trackArtist: track.artist, album: track.album, genre: track.genre, pictures: []);
+    final tag = Tag(
+      title: track.title,
+      trackArtist: track.artist,
+      album: track.album,
+      genre: track.genre,
+      pictures: [],
+    );
 
     await AudioTags.write(track.path, tag);
   }

@@ -81,7 +81,7 @@ class _PermissionGateState extends State<_PermissionGate> {
     getIt<PageManagerService>().init();
     await getIt<MusicService>().restoreLastSession();
 
-    Get.off(() => const MainTab());
+    Get.off(() => MainTab());
   }
 
   Future<bool> _requestStoragePermission() async {

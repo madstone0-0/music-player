@@ -59,11 +59,11 @@ class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SortSection<SortMode>(
+          SortSection<TrackSortMode>(
             options: const [
-              SortChipOption(label: 'Title', asc: SortMode.titleAsc, desc: SortMode.titleDesc),
-              SortChipOption(label: 'Artist', asc: SortMode.artistAsc, desc: SortMode.artistDesc),
-              SortChipOption(label: 'Album', asc: SortMode.albumAsc, desc: SortMode.albumDesc),
+              SortChipOption(label: 'Title', asc: TrackSortMode.titleAsc, desc: TrackSortMode.titleDesc),
+              SortChipOption(label: 'Artist', asc: TrackSortMode.artistAsc, desc: TrackSortMode.artistDesc),
+              SortChipOption(label: 'Album', asc: TrackSortMode.albumAsc, desc: TrackSortMode.albumDesc),
             ],
             currentMode: vm.sortMode,
             onToggle: vm.toggleSort,

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:music_player/screens/widgets/playerQueue.dart';
 import 'package:music_player/services/PageManagerService.dart';
 
 class PrimaryControls extends StatelessWidget {
   const PrimaryControls({super.key, required this.page});
 
-  final PageManagerService page;
+  final PlayerStateService page;
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +47,9 @@ class PrimaryControls extends StatelessWidget {
                 ),
                 child: isLoading
                     ? SizedBox.square(
-                  dimension: 28,
-                  child: CircularProgressIndicator(strokeWidth: 2.5, color: scheme.onPrimary),
-                )
+                        dimension: 28,
+                        child: CircularProgressIndicator(strokeWidth: 2.5, color: scheme.onPrimary),
+                      )
                     : Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 36),
               ),
             );
@@ -75,7 +76,7 @@ class PrimaryControls extends StatelessWidget {
 class SecondaryControls extends StatelessWidget {
   const SecondaryControls({super.key, required this.page});
 
-  final PageManagerService page;
+  final PlayerStateService page;
 
   @override
   Widget build(BuildContext context) {
@@ -111,9 +112,7 @@ class SecondaryControls extends StatelessWidget {
           icon: Icons.queue_music_rounded,
           label: 'Queue',
           active: false,
-          onTap: () {
-            // openPlayPlaylistQueue();
-          },
+          onTap: () => showModalBottomSheet(context: context, builder: (context) => PlayerQueue()),
         ),
       ],
     );
@@ -141,16 +140,16 @@ class _SecondaryButton extends StatelessWidget {
           // FilledTonal for active state, plain icon otherwise.
           active
               ? FilledButton.tonal(
-            onPressed: onTap,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(48, 48),
-              padding: EdgeInsets.zero,
-              shape: const CircleBorder(),
-              backgroundColor: scheme.secondaryContainer,
-              foregroundColor: scheme.onSecondaryContainer,
-            ),
-            child: Icon(icon, size: 22),
-          )
+                  onPressed: onTap,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                    padding: EdgeInsets.zero,
+                    shape: const CircleBorder(),
+                    backgroundColor: scheme.secondaryContainer,
+                    foregroundColor: scheme.onSecondaryContainer,
+                  ),
+                  child: Icon(icon, size: 22),
+                )
               : IconButton(onPressed: onTap, iconSize: 22, color: scheme.onSurfaceVariant, icon: Icon(icon)),
           Text(
             label,
@@ -163,5 +162,3 @@ class _SecondaryButton extends StatelessWidget {
     );
   }
 }
-
-

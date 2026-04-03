@@ -37,19 +37,19 @@ class ArtistsViewModel extends GetxController {
   final repo = getIt<TrackRepository>();
 
   final all = <ArtistData>[].obs;
-  final sortMode = SortMode.artistAsc.obs;
+  final sortMode = TrackSortMode.artistAsc.obs;
   final azItms = <AZArtist>[].obs;
   final isGrid = true.obs;
 
   @override
   void onInit() {
     super.onInit();
-    ever(sortMode, (SortMode mode) => _bind(mode));
+    ever(sortMode, (TrackSortMode mode) => _bind(mode));
     ever(all, (_) => _buildAZList());
     _bind(sortMode.value);
   }
 
-  void _bind(SortMode mode) {
+  void _bind(TrackSortMode mode) {
     all.bindStream(
       repo
           .watchGroupedArtists(grouping: grouping, mode: mode)
@@ -82,7 +82,7 @@ class ArtistsViewModel extends GetxController {
 
   void toggleSort(String category) {
     if (category == 'Name') {
-      sortMode.value = sortMode.value == SortMode.artistAsc ? SortMode.artistDesc : SortMode.artistAsc;
+      sortMode.value = sortMode.value == TrackSortMode.artistAsc ? TrackSortMode.artistDesc : TrackSortMode.artistAsc;
     }
   }
 }

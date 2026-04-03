@@ -34,23 +34,23 @@ class TrackRepository {
 
   Future<List<TrackData>> getByIds(List<int> ids) => _db.trackDao.getTracksByIds(ids);
 
-  Stream<List<TrackData>> watchAll({SortMode mode = SortMode.titleAsc}) => _db.trackDao.watchAllTracks(mode: mode);
+  Stream<List<TrackData>> watchAll({TrackSortMode mode = TrackSortMode.titleAsc}) => _db.trackDao.watchAllTracks(mode: mode);
 
-  Future<List<TrackData>> getByAlbum(String album, {SortMode mode = SortMode.titleAsc}) async {
+  Future<List<TrackData>> getByAlbum(String album, {TrackSortMode mode = TrackSortMode.titleAsc}) async {
     final allTracks = await _db.trackDao.getAllTracks();
     return allTracks.where((t) => t.album == album).toList();
   }
 
   Stream<List<TrackData>> watchByAlbumAndArtist(String? album, String? artist) => _db.trackDao
-      .watchAllTracks(mode: SortMode.trackNoAsc)
+      .watchAllTracks(mode: TrackSortMode.trackNoAsc)
       .map((list) => list.where((t) => t.album == album && t.artist == artist).toList());
 
-  Stream<List<Map<String, dynamic>>> watchGroupedAlbums({SortMode mode = SortMode.albumAsc}) =>
+  Stream<List<Map<String, dynamic>>> watchGroupedAlbums({TrackSortMode mode = TrackSortMode.albumAsc}) =>
       _db.trackDao.watchGroupedAlbums(mode: mode);
 
   Stream<List<Map<String, dynamic>>> watchGroupedArtists({
     ArtistGrouping grouping = ArtistGrouping.artist,
-    SortMode mode = SortMode.artistAsc,
+    TrackSortMode mode = TrackSortMode.artistAsc,
   }) => grouping == ArtistGrouping.artist
       ? _db.trackDao.watchGroupedArtists(mode: mode)
       : _db.trackDao.watchGroupedAlbumArtists(mode: mode);
@@ -105,7 +105,7 @@ class TrackRepository {
     );
   }
 
-  Future<int> removeByPath(String path) => _db.trackDao.deleteTrackByPath(path);
+  Future<int> removeByPath(String path) => _db.trackDao.markTrackUnindexedByPath(path);
 
   Future<int> fullRescan({
     void Function(int current, int total, String path)? onProgress,
@@ -113,23 +113,21 @@ class TrackRepository {
   }) async {
     final files = await _mediaService.scanAudioFiles();
     final total = files.length;
-    if (total == 0) return total;
+    if (total == 0) return 0;
 
-    final existingTracks = await _db.trackDao.getAllTracks();
-    final Map<String, DateTime?> dbMap = {for (var t in existingTracks) t.path: t.lastModified};
+    final snapshots = await _db.trackDao.getTrackScanSnapshots();
+    final dbMap = <String, DateTime?>{for (final row in snapshots) row.path: row.lastModified};
 
-    final List<String> pathsToRead = [];
-    final List<String> currentPathsOnDisk = [];
-    const int batchSize = 50;
+    final pathsToRead = <String>[];
+    final currentPathsOnDisk = <String>{};
+    const int batchSize = 100;
 
     for (int i = 0; i < total; i++) {
       final file = files[i];
       currentPathsOnDisk.add(file.path);
 
-      final fileModified = file.modifiedAt;
       final dbModified = dbMap[file.path];
-
-      final needsUpdate = overwrite || dbModified == null || fileModified.isAfter(dbModified);
+      final needsUpdate = overwrite || dbModified == null || dbModified.isBefore(file.modifiedAt);
 
       if (needsUpdate) {
         pathsToRead.add(file.path);
@@ -138,37 +136,36 @@ class TrackRepository {
       onProgress?.call(i + 1, total, file.path);
 
       if (pathsToRead.length >= batchSize) {
-        await _processAndSaveBatch(pathsToRead);
+        await _processAndSaveBatch(List<String>.from(pathsToRead));
         pathsToRead.clear();
       }
     }
 
     if (pathsToRead.isNotEmpty) {
-      await _processAndSaveBatch(pathsToRead);
+      await _processAndSaveBatch(List<String>.from(pathsToRead));
     }
 
-    final pathsToDelete = dbMap.keys.where((path) => !currentPathsOnDisk.contains(path)).toList();
+    final pathsMissingFromDisk = dbMap.keys.where((path) => !currentPathsOnDisk.contains(path)).toList();
 
-    if (pathsToDelete.isNotEmpty) {
-      await (_db.delete(_db.track)..where((t) => t.path.isIn(pathsToDelete))).go();
+    if (pathsMissingFromDisk.isNotEmpty) {
+      await _db.trackDao.markTracksUnindexedByPaths(pathsMissingFromDisk);
     }
 
     return total;
   }
 
   Future<void> _processAndSaveBatch(List<String> paths) async {
+    if (paths.isEmpty) return;
+
     final RootIsolateToken token = RootIsolateToken.instance!;
+    final parsedBatch = await compute(_parseMetadataTask, {'paths': paths, 'token': token});
 
-    final List<TrackCompanion> parsedBatch = await compute(_parseMetadataTask, {'paths': paths, 'token': token});
-
-    await _db.batch((batch) {
-      batch.insertAll(_db.track, parsedBatch, mode: InsertMode.insertOrReplace);
-    });
+    await _db.trackDao.upsertTracks(parsedBatch);
   }
 
   Future<List<TrackData>> singleRescan(TrackData track) async {
-    var tag = await AudioTaggingService.read(track.path);
-    await _db.trackDao.upsertTrack(tag);
+    final rescanned = await AudioTaggingService.read(track.path);
+    await _db.trackDao.upsertTrack(rescanned);
     return _db.trackDao.getAllTracks();
   }
 }

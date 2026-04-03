@@ -326,10 +326,6 @@ class AudioPlayerHandlerService {
     );
   }
 
-  Future<void> updateQueue(List<MediaItem> items) async {
-    await player.setAudioSources(_makeAudioSources(items), initialIndex: 0, initialPosition: Duration.zero);
-  }
-
   Future<void> removeQueueItemAt(int effectiveIdx) async {
     if (effectiveIdx < 0 || effectiveIdx >= Q.value.length) return;
 
@@ -371,15 +367,16 @@ class AudioPlayerHandlerService {
     await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
   }
 
-  Future<void> removeQueueItemIndex(int idx) async {
-    await removeQueueItemAt(idx);
-  }
-
   Future<void> setNewPlaylist(List<MediaItem> items, int idx) async {
     await player.clearAudioSources();
     if (items.isNotEmpty) {
       await player.setAudioSources(_makeAudioSources(items), initialIndex: idx, initialPosition: Duration.zero);
     }
+  }
+
+  Future<void> clearQueue() async {
+    await player.stop();
+    await player.clearAudioSources();
   }
 
   Future<void> play() => player.play();

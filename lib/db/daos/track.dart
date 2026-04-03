@@ -5,7 +5,7 @@ import '../tables/track.dart';
 
 part "track.g.dart";
 
-enum SortMode {
+enum TrackSortMode {
   titleAsc,
   titleDesc,
   artistAsc,
@@ -22,31 +22,33 @@ enum SortMode {
 
 enum ArtistGrouping { artist, albumArtist }
 
-OrderingTerm _order(dynamic t, SortMode mode) {
+typedef TrackScanSnapshot = ({String path, DateTime? lastModified});
+
+OrderingTerm _order(dynamic t, TrackSortMode mode) {
   switch (mode) {
-    case SortMode.titleAsc:
+    case TrackSortMode.titleAsc:
       return OrderingTerm(expression: t.title);
-    case SortMode.titleDesc:
+    case TrackSortMode.titleDesc:
       return OrderingTerm(expression: t.title, mode: OrderingMode.desc);
-    case SortMode.artistAsc:
+    case TrackSortMode.artistAsc:
       return OrderingTerm(expression: t.artist);
-    case SortMode.artistDesc:
+    case TrackSortMode.artistDesc:
       return OrderingTerm(expression: t.artist, mode: OrderingMode.desc);
-    case SortMode.albumAsc:
+    case TrackSortMode.albumAsc:
       return OrderingTerm(expression: t.album);
-    case SortMode.albumDesc:
+    case TrackSortMode.albumDesc:
       return OrderingTerm(expression: t.album, mode: OrderingMode.desc);
-    case SortMode.trackNoAsc:
+    case TrackSortMode.trackNoAsc:
       return OrderingTerm(expression: t.trackNo);
-    case SortMode.trackNoDesc:
+    case TrackSortMode.trackNoDesc:
       return OrderingTerm(expression: t.trackNo, mode: OrderingMode.desc);
-    case SortMode.yearAsc:
+    case TrackSortMode.yearAsc:
       return OrderingTerm(expression: t.year);
-    case SortMode.yearDesc:
+    case TrackSortMode.yearDesc:
       return OrderingTerm(expression: t.year, mode: OrderingMode.desc);
-    case SortMode.albumArtistAsc:
+    case TrackSortMode.albumArtistAsc:
       return OrderingTerm(expression: t.albumArtist);
-    case SortMode.albumArtistDesc:
+    case TrackSortMode.albumArtistDesc:
       return OrderingTerm(expression: t.albumArtist, mode: OrderingMode.desc);
   }
 }
@@ -55,22 +57,38 @@ OrderingTerm _order(dynamic t, SortMode mode) {
 class TrackDao extends DatabaseAccessor<AppDatabase> with _$TrackDaoMixin {
   TrackDao(super.attachedDatabase);
 
-  Future<List<TrackData>> getAllTracks() {
-    return select(track).get();
+  Expression<bool> _isActive(Track t) => t.isIndexed.equals(true);
+
+  Future<List<TrackData>> getAllTracks() => (select(track)..where((t) => _isActive(t))).get();
+
+  Future<TrackData> getTrackById(int id) => (select(track)..where((t) => t.id.equals(id) & _isActive(t))).getSingle();
+
+  Future<List<TrackData>> getTracksByIds(List<int> ids) =>
+      (select(track)..where((t) => t.id.isIn(ids) & _isActive(t))).get();
+
+  Future<List<TrackScanSnapshot>> getTrackScanSnapshots() async {
+    final query = selectOnly(track)..addColumns([track.path, track.lastModified]);
+    final rows = await query.get();
+
+    return rows.map((row) => (path: row.read(track.path)!, lastModified: row.read(track.lastModified))).toList();
   }
 
-  Future<TrackData> getTrackById(int id) {
-    return (select(track)..where((t) => t.id.equals(id))).getSingle();
+  Future<TrackData?> getTrackByPath(String filePath) {
+    return (select(track)..where((t) => t.path.equals(filePath) & _isActive(t))).getSingleOrNull();
   }
 
-  Future<List<TrackData>> getTracksByIds(List<int> ids) {
-    return (select(track)..where((t) => t.id.isIn(ids))).get();
+  Stream<List<TrackData>> watchAllTracks({TrackSortMode mode = TrackSortMode.titleAsc}) {
+    return (select(track)
+          ..where((t) => _isActive(t))
+          ..orderBy([(t) => _order(t, mode)]))
+        .watch();
   }
 
-  Stream<List<Map<String, dynamic>>> watchGroupedAlbums({SortMode mode = SortMode.albumAsc}) {
+  Stream<List<Map<String, dynamic>>> watchGroupedAlbums({TrackSortMode mode = TrackSortMode.albumAsc}) {
     final trackCount = track.id.count();
 
     final query = select(track).addColumns([trackCount])
+      ..where(_isActive(track))
       ..groupBy([track.album])
       ..orderBy([_order(track, mode)]);
 
@@ -78,60 +96,56 @@ class TrackDao extends DatabaseAccessor<AppDatabase> with _$TrackDaoMixin {
       return rows.map((row) {
         final trackData = row.readTable(track);
         final count = row.read(trackCount);
-
-        return {
-          ...trackData.toJson(), // Converts TrackData back to a Map
-          'trackCount': count,
-        };
+        return {...trackData.toJson(), 'trackCount': count};
       }).toList();
     });
   }
 
-  Stream<List<TrackData>> watchAllTracks({SortMode mode = SortMode.titleAsc}) {
-    return (select(track)..orderBy([(t) => _order(t, mode)])).watch();
-  }
-
-  Stream<List<Map<String, dynamic>>> watchGroupedArtists({SortMode mode = SortMode.artistAsc}) {
+  Stream<List<Map<String, dynamic>>> watchGroupedArtists({TrackSortMode mode = TrackSortMode.artistAsc}) {
     final trackCount = track.id.count();
+
     final query = select(track).addColumns([trackCount])
+      ..where(_isActive(track))
       ..groupBy([track.artist])
       ..orderBy([_order(track, mode)]);
 
-    return query.watch().map(
-      (rows) => rows.map((row) {
+    return query.watch().map((rows) {
+      return rows.map((row) {
         final trackData = row.readTable(track);
         final count = row.read(trackCount);
         return {...trackData.toJson(), 'trackCount': count};
-      }).toList(),
-    );
+      }).toList();
+    });
   }
 
-  Stream<List<Map<String, dynamic>>> watchGroupedAlbumArtists({SortMode mode = SortMode.artistAsc}) {
+  Stream<List<Map<String, dynamic>>> watchGroupedAlbumArtists({TrackSortMode mode = TrackSortMode.artistAsc}) {
     final trackCount = track.id.count();
+
     final query = select(track).addColumns([trackCount])
+      ..where(_isActive(track))
       ..groupBy([track.albumArtist])
       ..orderBy([_order(track, mode)]);
 
-    return query.watch().map(
-      (rows) => rows.map((row) {
+    return query.watch().map((rows) {
+      return rows.map((row) {
         final trackData = row.readTable(track);
         final count = row.read(trackCount);
         return {...trackData.toJson(), 'trackCount': count};
-      }).toList(),
-    );
+      }).toList();
+    });
   }
 
   Stream<List<TrackData>> watchTracksByArtist(String name) {
     return (select(track)
-          ..where((t) => t.artist.equals(name))
-          ..orderBy([(t) => _order(t, SortMode.albumAsc)]))
+          ..where((t) => t.artist.equals(name) & _isActive(t))
+          ..orderBy([(t) => _order(t, TrackSortMode.albumAsc)]))
         .watch();
   }
 
   Stream<List<TrackData>> watchTracksByAlbumArtist(String name) {
     return (select(track)
-          ..where((t) => t.albumArtist.equals(name))
-          ..orderBy([(t) => _order(t, SortMode.albumAsc)]))
+          ..where((t) => t.albumArtist.equals(name) & _isActive(t))
+          ..orderBy([(t) => _order(t, TrackSortMode.albumAsc)]))
         .watch();
   }
 
@@ -142,21 +156,21 @@ class TrackDao extends DatabaseAccessor<AppDatabase> with _$TrackDaoMixin {
     final trackCount = track.id.count();
 
     final query = select(track).addColumns([trackCount])
-      ..where(grouping == ArtistGrouping.artist ? track.artist.equals(name) : track.albumArtist.equals(name))
+      ..where(
+        grouping == ArtistGrouping.artist
+            ? track.artist.equals(name) & _isActive(track)
+            : track.albumArtist.equals(name) & _isActive(track),
+      )
       ..groupBy([track.album])
       ..orderBy([OrderingTerm(expression: track.year, mode: OrderingMode.desc)]);
 
-    return query.watch().map(
-      (rows) => rows.map((row) {
+    return query.watch().map((rows) {
+      return rows.map((row) {
         final trackData = row.readTable(track);
         final count = row.read(trackCount);
         return {...trackData.toJson(), 'trackCount': count};
-      }).toList(),
-    );
-  }
-
-  Future<TrackData?> getTrackByPath(String filePath) {
-    return (select(track)..where((t) => t.path.equals(filePath))).getSingleOrNull();
+      }).toList();
+    });
   }
 
   Future<int> insertTrack(TrackCompanion entry) {
@@ -170,7 +184,101 @@ class TrackDao extends DatabaseAccessor<AppDatabase> with _$TrackDaoMixin {
   }
 
   Future<int> upsertTrack(TrackCompanion entry) {
-    return into(track).insertOnConflictUpdate(entry);
+    return into(track).insert(
+      entry,
+      onConflict: DoUpdate(
+        (old) => TrackCompanion(
+          trackNo: entry.trackNo,
+          path: entry.path,
+          title: entry.title,
+          artist: entry.artist,
+          albumArtist: entry.albumArtist,
+          album: entry.album,
+          genre: entry.genre,
+          year: entry.year,
+          coverPath: entry.coverPath,
+          lastModified: entry.lastModified,
+          isIndexed: const Value(true),
+        ),
+        target: [track.path],
+      ),
+    );
+  }
+
+  Future<void> upsertTracks(List<TrackCompanion> entries) async {
+    if (entries.isEmpty) return;
+
+    await batch((batch) {
+      for (final entry in entries) {
+        batch.insert(
+          track,
+          entry,
+          onConflict: DoUpdate(
+            (old) => TrackCompanion(
+              trackNo: entry.trackNo,
+              path: entry.path,
+              title: entry.title,
+              artist: entry.artist,
+              albumArtist: entry.albumArtist,
+              album: entry.album,
+              genre: entry.genre,
+              year: entry.year,
+              coverPath: entry.coverPath,
+              lastModified: entry.lastModified,
+              isIndexed: const Value(true),
+            ),
+            target: [track.path],
+          ),
+        );
+      }
+    });
+  }
+
+  Future<int> markTracksUnindexedByPaths(List<String> paths) {
+    if (paths.isEmpty) return Future.value(0);
+
+    return (update(track)..where((t) => t.path.isIn(paths))).write(const TrackCompanion(isIndexed: Value(false)));
+  }
+
+  Future<int> markTrackUnindexedByPath(String filePath) {
+    return (update(track)..where((t) => t.path.equals(filePath))).write(const TrackCompanion(isIndexed: Value(false)));
+  }
+
+  Future<int> restoreTrackByPath(String filePath) {
+    return (update(track)..where((t) => t.path.equals(filePath))).write(const TrackCompanion(isIndexed: Value(true)));
+  }
+
+  Future<int> restoreTracksByPaths(List<String> paths) {
+    if (paths.isEmpty) return Future.value(0);
+
+    return (update(track)..where((t) => t.path.isIn(paths))).write(const TrackCompanion(isIndexed: Value(true)));
+  }
+
+  Future<List<TrackData>> getUnindexedTracks() {
+    return (select(track)..where((t) => t.isIndexed.equals(false))).get();
+  }
+
+  Stream<List<TrackData>> watchUnindexedTracks() {
+    return (select(track)..where((t) => t.isIndexed.equals(false))).watch();
+  }
+
+  Future<int> permanentlyDeleteTrackByPath(String filePath) {
+    return (delete(track)..where((t) => t.path.equals(filePath))).go();
+  }
+
+  Future<int> permanentlyDeleteUnindexedTracks() {
+    return (delete(track)..where((t) => t.isIndexed.equals(false))).go();
+  }
+
+  Future<int> deleteAllTracks() {
+    return delete(track).go();
+  }
+
+  Future<void> refreshAllTracks(List<TrackCompanion> tracks) async {
+    return transaction(() async {
+      await deleteAllTracks();
+      await insertManyTracks(tracks);
+    });
   }
 
   Future<int> updateTrackMetadata({
@@ -190,20 +298,5 @@ class TrackDao extends DatabaseAccessor<AppDatabase> with _$TrackDaoMixin {
         lastModified: Value(lastModified),
       ),
     );
-  }
-
-  Future<int> deleteTrackByPath(String filePath) {
-    return (delete(track)..where((t) => t.path.equals(filePath))).go();
-  }
-
-  Future<int> deleteAllTracks() {
-    return delete(track).go();
-  }
-
-  Future<void> refreshAllTracks(List<TrackCompanion> tracks) async {
-    return transaction(() async {
-      await deleteAllTracks();
-      await insertManyTracks(tracks);
-    });
   }
 }

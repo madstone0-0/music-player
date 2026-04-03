@@ -15,11 +15,15 @@ Widget coverArtPlaceholder(ColorScheme scheme, double size) {
 }
 
 Widget buildCoverArt(
-  MediaItem track,
+  MediaItem? track,
   double size, {
   ColorScheme scheme = const ColorScheme.dark(),
   bool isWeb = false,
 }) {
+  if (track == null) {
+    return coverArtPlaceholder(scheme, size);
+  }
+
   final uri = track.artUri;
 
   if (uri == null) {

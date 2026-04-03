@@ -7,7 +7,7 @@ enum CoverStyle { circular, rounded, square, vinyl }
 class TrackCoverArt extends StatelessWidget {
   const TrackCoverArt({super.key, required this.track, this.size = 50.0, this.style = CoverStyle.rounded, this.coverArtOverride});
 
-  final MediaItem track;
+  final MediaItem? track;
   final double size;
   final CoverStyle style;
   final Widget? coverArtOverride;

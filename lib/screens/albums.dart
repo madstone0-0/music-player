@@ -45,10 +45,10 @@ class _AlbumsState extends State<Albums> with AutomaticKeepAliveClientMixin {
           Row(
             children: [
               Expanded(
-                child: SortSection<SortMode>(
+                child: SortSection<TrackSortMode>(
                   options: const [
-                    SortChipOption(label: 'Title', asc: SortMode.albumAsc, desc: SortMode.albumDesc),
-                    SortChipOption(label: 'Year', asc: SortMode.yearAsc, desc: SortMode.yearDesc),
+                    SortChipOption(label: 'Title', asc: TrackSortMode.albumAsc, desc: TrackSortMode.albumDesc),
+                    SortChipOption(label: 'Year', asc: TrackSortMode.yearAsc, desc: TrackSortMode.yearDesc),
                   ],
                   currentMode: vm.sortMode,
                   onToggle: vm.toggleSort,

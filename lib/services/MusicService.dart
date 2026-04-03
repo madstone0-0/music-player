@@ -16,15 +16,22 @@ class MusicService {
   final repo = getIt<TrackRepository>();
   final AudioPlayerHandlerService handler = getIt<AudioPlayerHandlerService>();
 
-  Timer? _debounce;
-  static const _debounceMs = 600;
-
   ValueNotifier<List<MediaItem>> get Q => handler.Q;
+
   ValueNotifier<MediaItem?> get curr => handler.curr;
+
+  int? get currIdx => handler.currIdx;
+
+  int? get currEffIdx => handler.currEffectiveIdx;
+
   Stream<PlayerState> get playerSS => handler.playerSS;
+
   Stream<Duration> get posS => handler.posS;
+
   Stream<Duration> get bufPosS => handler.bufPosS;
+
   Stream<Duration?> get durS => handler.durS;
+
   Stream<bool> get shuffleModeS => handler.shuffleModeS;
 
   void play() => handler.play();
@@ -45,14 +52,12 @@ class MusicService {
 
   Future<void> stop() async => await handler.stop();
 
-  void playAllDebounced(List<TrackData> tracks, int index, {bool shuffle = false}) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: _debounceMs), () {
-      playAll(tracks, index: index, shuffle: shuffle);
-    });
-  }
-
-  Future<void> playAll(List<TrackData> tracks, {int index = 0, bool shuffle = false, bool fromMiniPlayer = false}) async {
+  Future<void> playAll(
+    List<TrackData> tracks, {
+    int index = 0,
+    bool shuffle = false,
+    bool fromMiniPlayer = false,
+  }) async {
     if (fromMiniPlayer) return;
     if (tracks.isEmpty) return;
 
@@ -60,11 +65,11 @@ class MusicService {
     final List<MediaItem> q = tracks.map((t) => t.toMediaItem()).toList();
 
     if (shuffle) {
-      await handler.setNewPlaylist(q, safeIndex);
       await handler.setShuffleMode(true);
-    } else {
       await handler.setNewPlaylist(q, safeIndex);
+    } else {
       await handler.setShuffleMode(false);
+      await handler.setNewPlaylist(q, safeIndex);
     }
 
     await handler.play();
@@ -74,11 +79,21 @@ class MusicService {
 
   Future<void> addToQueue(TrackData track) async => await handler.addQueueItem(track.toMediaItem());
 
+  Future<void> addAllToQueue(List<TrackData> tracks) async => await handler.addQueueItems(tracks.map((t) => t.toMediaItem()).toList());
+
+  Future<void> removeFromQueue(int index) async => await handler.removeQueueItemAt(index);
+
   Future<void> playNext(TrackData track) async {
-    final currIdx = handler.currIdx;
-    final idx = (currIdx ?? -1) + 1;
+    final effIdx = handler.currEffectiveIdx;
+    final idx = (effIdx ?? -1) + 1;
     await handler.addQueueItemAt(track.toMediaItem(), idx);
   }
+
+  Future<void> clearQueue() async {
+    await handler.clearQueue();
+  }
+
+  Future<void> moveQueueItem(int from, int to) async => await handler.moveQueueItem(from, to);
 
   Future<TrackData?> resolveCurrentTrack() async {
     final track = handler.curr.value;
@@ -116,8 +131,6 @@ class MusicService {
     }
   }
 
-  void cancelDebounce() => _debounce?.cancel();
-
   Future<void> restoreLastSession() async {
     final prefs = await SharedPreferences.getInstance();
     final savedIds = prefs.getStringList('last_queue_ids') ?? [];
@@ -150,4 +163,6 @@ class MusicService {
     }
     return true;
   }
+
+
 }

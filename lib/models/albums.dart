@@ -21,7 +21,7 @@ class AlbumsViewModel extends GetxController {
   final repo = getIt<TrackRepository>();
 
   final azItms = <AZAlbum>[].obs;
-  final sortMode = SortMode.albumAsc.obs;
+  final sortMode = TrackSortMode.albumAsc.obs;
   final isGrid = false.obs;
 
   StreamSubscription? _albumSub;
@@ -42,7 +42,7 @@ class AlbumsViewModel extends GetxController {
         return;
       }
 
-      final isYearSort = sortMode.value == SortMode.yearAsc || sortMode.value == SortMode.yearDesc;
+      final isYearSort = sortMode.value == TrackSortMode.yearAsc || sortMode.value == TrackSortMode.yearDesc;
       final snapshot = List<Map<String, dynamic>>.of(groupedData);
 
       Future.microtask(() {
@@ -79,9 +79,9 @@ class AlbumsViewModel extends GetxController {
 
   void toggleSort(String category) {
     if (category == 'Title') {
-      sortMode.value = (sortMode.value == SortMode.albumAsc) ? SortMode.albumDesc : SortMode.albumAsc;
+      sortMode.value = (sortMode.value == TrackSortMode.albumAsc) ? TrackSortMode.albumDesc : TrackSortMode.albumAsc;
     } else if (category == 'Year') {
-      sortMode.value = (sortMode.value == SortMode.yearAsc) ? SortMode.yearDesc : SortMode.yearAsc;
+      sortMode.value = (sortMode.value == TrackSortMode.yearAsc) ? TrackSortMode.yearDesc : TrackSortMode.yearAsc;
     }
   }
 }

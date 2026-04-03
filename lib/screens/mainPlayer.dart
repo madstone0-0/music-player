@@ -23,11 +23,11 @@ class MainPlayer extends StatefulWidget {
 }
 
 class MainPlayerState extends State<MainPlayer> {
-  final vm = Get.put(MainPlayerViewModel());
+  final vm = Get.put(MainPlayerViewModel(), permanent: true);
 
   @override
   Widget build(BuildContext context) {
-    final page = getIt<PageManagerService>();
+    final playerState = getIt<PlayerStateService>();
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
 
@@ -60,6 +60,8 @@ class MainPlayerState extends State<MainPlayer> {
               items: [
                 PopupMenuItemData(value: 0, icon: Icons.playlist_add_rounded, label: 'Add to Playlist'),
                 PopupMenuItemData(value: 1, icon: Icons.info_outline, label: "Details"),
+                PopupMenuItemData(value: 3, icon: Icons.album_rounded, label: "View Album"),
+                PopupMenuItemData(value: 4, icon: Icons.person_rounded, label: "View Artist"),
                 PopupMenuItemData(value: 2, icon: Icons.lyrics_outlined, label: "Lyrics"),
               ],
               onSelected: (v) {
@@ -70,6 +72,10 @@ class MainPlayerState extends State<MainPlayer> {
                     break;
                   case 2:
                     break;
+                  case 3:
+                    break;
+                  case 4:
+                    break;
                 }
               },
             ),
@@ -77,10 +83,9 @@ class MainPlayerState extends State<MainPlayer> {
         ),
 
         body: ValueListenableBuilder<MediaItem?>(
-          valueListenable: page.currentTrackNotifier,
+          valueListenable: playerState.currentTrackNotifier,
           builder: (context, track, _) {
-            if (track == null) return const SizedBox.shrink();
-            return _PlayerBody(track: track, page: page, vm: vm);
+            return _PlayerBody(track: track, page: playerState, vm: vm);
           },
         ),
       ),
@@ -92,62 +97,62 @@ class _PlayerBody extends StatelessWidget {
   const _PlayerBody({required this.track, required this.page, required this.vm});
 
   final MainPlayerViewModel vm;
-  final MediaItem track;
-  final PageManagerService page;
+  final MediaItem? track;
+  final PlayerStateService page;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final size = MediaQuery.sizeOf(context);
+    final title = track?.title ?? "Unknown Title";
+    final artistAlbum = [track?.artist ?? "Unknown Artist", track?.album ?? "Unknown Album"].join(' • ');
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 12),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 12),
 
-            _ArtworkWithSeek(track: track, page: page, vm: vm, screenSize: size),
+          _ArtworkWithSeek(track: track, page: page, vm: vm, screenSize: size),
 
-            const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-            Text(
-              track.title,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: text.titleLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 6),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: text.titleLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
 
-            Text(
-              [if (track.artist != null) track.artist!, if (track.album != null) track.album!].join(' • '),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-            ),
+          Text(
+            artistAlbum,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
 
-            const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-            _LinearSeekBar(page: page),
+          _LinearSeekBar(page: page),
 
-            const SizedBox(height: 8),
-            _Timestamps(page: page),
+          const SizedBox(height: 8),
+          _Timestamps(page: page),
 
-            const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-            PrimaryControls(page: page),
+          PrimaryControls(page: page),
 
-            const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-            SecondaryControls(page: page),
+          SecondaryControls(page: page),
 
-            const SizedBox(height: 24),
-          ],
-        ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
@@ -157,8 +162,8 @@ class _ArtworkWithSeek extends StatelessWidget {
   const _ArtworkWithSeek({required this.track, required this.page, required this.vm, required this.screenSize});
 
   final MainPlayerViewModel vm;
-  final MediaItem track;
-  final PageManagerService page;
+  final MediaItem? track;
+  final PlayerStateService page;
   final Size screenSize;
 
   @override
@@ -188,9 +193,9 @@ class _ArtworkWithSeek extends StatelessWidget {
         return Image.memory(art.bytes, width: size, height: size, fit: BoxFit.cover);
       }
 
-      if (track.artUri != null) {
+      if (track!.artUri != null) {
         return Image.file(
-          File(track.artUri!.toFilePath()),
+          File(track!.artUri!.toFilePath()),
           width: size,
           height: size,
           fit: BoxFit.cover,
@@ -206,7 +211,7 @@ class _ArtworkWithSeek extends StatelessWidget {
 class _LinearSeekBar extends StatelessWidget {
   const _LinearSeekBar({required this.page});
 
-  final PageManagerService page;
+  final PlayerStateService page;
 
   @override
   Widget build(BuildContext context) {
@@ -244,7 +249,7 @@ class _LinearSeekBar extends StatelessWidget {
 class _Timestamps extends StatelessWidget {
   const _Timestamps({required this.page});
 
-  final PageManagerService page;
+  final PlayerStateService page;
 
   static final _re = RegExp(r'((^0*[1-9]\d*:)?\d{2}:\d{2})\.\d+$');
 

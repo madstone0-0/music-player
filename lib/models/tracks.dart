@@ -19,13 +19,13 @@ class TracksViewModel extends GetxController {
   final repo = getIt<TrackRepository>();
 
   final all = <TrackData>[].obs;
-  final sortMode = SortMode.titleAsc.obs;
+  final sortMode = TrackSortMode.titleAsc.obs;
   final azItms = <AZTrack>[].obs;
 
   @override
   void onInit() {
     super.onInit();
-    ever(sortMode, (SortMode mode) {
+    ever(sortMode, (TrackSortMode mode) {
       all.bindStream(repo.watchAll(mode: mode));
     });
 
@@ -50,9 +50,9 @@ class TracksViewModel extends GetxController {
         String rawString = '';
 
         // Determine which field to extract the first letter from
-        if (mode == SortMode.artistAsc || mode == SortMode.artistDesc) {
+        if (mode == TrackSortMode.artistAsc || mode == TrackSortMode.artistDesc) {
           rawString = track.artist ?? 'Unknown Artist';
-        } else if (mode == SortMode.albumAsc || mode == SortMode.albumDesc) {
+        } else if (mode == TrackSortMode.albumAsc || mode == TrackSortMode.albumDesc) {
           rawString = track.album ?? 'Unknown Album';
         } else {
           rawString = track.title;
@@ -75,13 +75,13 @@ class TracksViewModel extends GetxController {
   void toggleSort(String category) {
     switch (category) {
       case 'Title':
-        sortMode.value = (sortMode.value == SortMode.titleAsc) ? SortMode.titleDesc : SortMode.titleAsc;
+        sortMode.value = (sortMode.value == TrackSortMode.titleAsc) ? TrackSortMode.titleDesc : TrackSortMode.titleAsc;
         break;
       case 'Artist':
-        sortMode.value = (sortMode.value == SortMode.artistAsc) ? SortMode.artistDesc : SortMode.artistAsc;
+        sortMode.value = (sortMode.value == TrackSortMode.artistAsc) ? TrackSortMode.artistDesc : TrackSortMode.artistAsc;
         break;
       case 'Album':
-        sortMode.value = (sortMode.value == SortMode.albumAsc) ? SortMode.albumDesc : SortMode.albumAsc;
+        sortMode.value = (sortMode.value == TrackSortMode.albumAsc) ? TrackSortMode.albumDesc : TrackSortMode.albumAsc;
         break;
     }
   }

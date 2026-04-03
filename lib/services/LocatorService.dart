@@ -14,5 +14,5 @@ Future<void> setupLocatorService() async {
   getIt.registerSingleton<LocalMediaService>(await LocalMediaService.create());
   getIt.registerSingleton<TrackRepository>(TrackRepository(getIt<AppDatabase>(), getIt<LocalMediaService>()));
   getIt.registerLazySingleton<MusicService>(() => MusicService());
-  getIt.registerLazySingleton<PageManagerService>(() => PageManagerService());
+  getIt.registerLazySingleton<PlayerStateService>(() => PlayerStateService());
 }

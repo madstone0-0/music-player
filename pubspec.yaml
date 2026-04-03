@@ -50,6 +50,7 @@ dependencies:
   azlistview: ^2.0.0
   shared_preferences: ^2.5.5
   path: ^1.9.1
+  scrollable_positioned_list: ^0.2.3
 
 dev_dependencies:
   flutter_test:

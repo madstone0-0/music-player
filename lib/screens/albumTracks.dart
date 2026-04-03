@@ -87,6 +87,28 @@ class _AlbumTracksState extends State<AlbumTracks> {
                     ),
                     background: _buildLargeArt(firstTrack.artUri, scheme),
                   ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      onPressed: () => player.playAll(vm.tracks),
+                      tooltip: "Play",
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.shuffle_rounded),
+                      onPressed: () => player.playAll(vm.tracks, shuffle: true),
+                      tooltip: "Shuffle",
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.playlist_add_rounded),
+                      onPressed: () {},
+                      tooltip: "Add to Playlist",
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.queue_music_rounded),
+                      onPressed: () => player.addAllToQueue(vm.tracks),
+                      tooltip: "Add to Queue",
+                    ),
+                  ],
                 ),
 
                 SliverPadding(
@@ -145,4 +167,3 @@ class _AlbumTracksState extends State<AlbumTracks> {
     );
   }
 }
-

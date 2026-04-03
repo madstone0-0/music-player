@@ -32,13 +32,12 @@ Future<List<LocalMediaFile>> _scanDirectoryTask(Map<String, dynamic> args) async
     if (!supportedExtensions.contains(ext)) continue;
 
     try {
-      // 3. Use async stat()
       final stat = await entity.stat();
 
       results.add(
         LocalMediaFile(
           path: path,
-          name: p.basename(path), // Faster than custom fileNameOf
+          name: p.basename(path),
           sizeBytes: stat.size,
           modifiedAt: stat.modified,
         ),

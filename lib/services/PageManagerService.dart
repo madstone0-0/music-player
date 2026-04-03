@@ -34,10 +34,12 @@ class RepeatButtonNotifier extends ValueNotifier<RepeatState> {
   };
 }
 
-class PageManagerService {
+class PlayerStateService {
   final _musicSrv = getIt<MusicService>();
 
   final currentTrackNotifier = ValueNotifier<MediaItem?>(null);
+
+  int? get currentIdx => _musicSrv.currEffIdx;
   final queueNotifier = ValueNotifier<List<MediaItem>>([]);
   final progressNotifier = ValueNotifier<ProgressBarState>(ProgressBarState.zero);
   final playButtonNotifier = ValueNotifier<ButtonState>(ButtonState.paused);
@@ -149,8 +151,6 @@ class PageManagerService {
   void next() => _musicSrv.next();
 
   void prev() => _musicSrv.prev();
-
-  void skipTo(int index) => _musicSrv.skipTo(index);
 
   void toggleRepeat() {
     repeatButtonNotifier.nextState();

@@ -8,15 +8,15 @@ import 'package:music_player/services/PageManagerService.dart';
 
 class MainPlayerViewModel extends GetxController {
   final currTag = Tag(pictures: []).obs;
-  final page = getIt<PageManagerService>();
+  final playerState = getIt<PlayerStateService>();
 
   Picture? get coverArt => currTag.value.pictures.isNotEmpty ? currTag.value.pictures.first : null;
 
   @override
   void onInit() {
     super.onInit();
-    page.currentTrackNotifier.addListener(() {
-      final track = page.currentTrackNotifier.value;
+    playerState.currentTrackNotifier.addListener(() {
+      final track = playerState.currentTrackNotifier.value;
       if (track != null) {
         _updateCurrentTag(track);
       } else {
