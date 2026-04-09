@@ -1,10 +1,10 @@
 import 'package:azlistview/azlistview.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/models/artists.dart';
 import 'package:music_player/screens/artistAlbums.dart';
+import 'package:music_player/models/queueIntent.dart';
 import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/artistItem.dart';
 import 'package:music_player/screens/widgets/azList.dart';
@@ -23,6 +23,7 @@ class Artists extends StatefulWidget {
 
 class _ArtistsState extends State<Artists> with AutomaticKeepAliveClientMixin {
   late final ArtistsViewModel vm;
+  final queueActions = QueueActionHandler();
 
   @override
   void initState() {
@@ -36,11 +37,19 @@ class _ArtistsState extends State<Artists> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
-  void _handleMenuSelection(int v, ArtistData artist) {
+  void _handleMenuSelection(int v, ArtistData artist) async {
+    final intent = QueueIntent.artist(
+      artist: artist.name,
+      grouping: widget.grouping,
+      trackCount: artist.trackCount,
+    );
+
     switch (v) {
       case 0:
+        await queueActions.playNext(intent);
         break;
       case 1:
+        await queueActions.addToQueue(intent);
         break;
       case 2:
         PlaylistModal.open(

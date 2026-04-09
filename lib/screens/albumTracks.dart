@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/daos/track.dart';
-import 'package:music_player/db/db.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/albumTracks.dart';
+import 'package:music_player/models/queueIntent.dart';
 import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/albumTrackRow.dart';
 import 'package:music_player/screens/widgets/miniPlayer.dart';
@@ -13,6 +13,7 @@ import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
 
+import '../db/db.dart';
 import '../models/playlistModal.dart';
 
 class AlbumTracks extends StatefulWidget {
@@ -27,14 +28,17 @@ class AlbumTracks extends StatefulWidget {
 class _AlbumTracksState extends State<AlbumTracks> {
   late final AlbumTracksViewModel vm;
   final player = getIt<MusicService>();
+  final queueActions = QueueActionHandler();
 
-  void _handleMenuSelection(int v, TrackData track) {
+  void _handleMenuSelection(int v, TrackData track) async {
+    final intent = QueueIntent.track(track);
+
     switch (v) {
       case 0:
-        player.playNext(track);
+        await queueActions.playNext(intent);
         break;
       case 1:
-        player.addToQueue(track);
+        await queueActions.addToQueue(intent);
         break;
       case 2:
         PlaylistModal.open(context, PlaylistAddIntent.track(track));
@@ -109,7 +113,7 @@ class _AlbumTracksState extends State<AlbumTracks> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.queue_music_rounded),
-                      onPressed: () => player.addAllToQueue(vm.tracks),
+                      onPressed: _queueEntireAlbum,
                       tooltip: "Add to Queue",
                     ),
                   ],
@@ -146,6 +150,20 @@ class _AlbumTracksState extends State<AlbumTracks> {
 
           const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
         ],
+      ),
+    );
+  }
+
+  Future<void> _queueEntireAlbum() async {
+    final tracks = List<TrackData>.of(vm.tracks);
+    if (tracks.isEmpty) return;
+
+    await queueActions.addToQueue(
+      QueueIntent.album(
+        album: vm.albumName,
+        artist: vm.artistName,
+        tracks: tracks,
+        trackCount: tracks.length,
       ),
     );
   }

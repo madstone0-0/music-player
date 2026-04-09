@@ -1,21 +1,16 @@
 import 'package:azlistview/azlistview.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/db/db.dart';
-import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/albums.dart';
+import 'package:music_player/models/queueIntent.dart';
 import 'package:music_player/screens/albumTracks.dart';
 import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/albumItem.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/sort.dart';
-import 'package:music_player/screens/widgets/trackRow.dart';
 import 'package:music_player/screens/widgets/azList.dart';
-import 'package:music_player/screens/widgets/coverArt.dart';
-import 'package:music_player/services/LocatorService.dart';
-import 'package:music_player/services/MusicService.dart';
 
 import '../models/playlistModal.dart';
 
@@ -30,7 +25,7 @@ class _AlbumsState extends State<Albums> with AutomaticKeepAliveClientMixin {
   _AlbumsState();
 
   late final AlbumsViewModel vm;
-  final player = getIt<MusicService>();
+  final queueActions = QueueActionHandler();
 
   @override
   void initState() {
@@ -38,11 +33,19 @@ class _AlbumsState extends State<Albums> with AutomaticKeepAliveClientMixin {
     vm = Get.isRegistered<AlbumsViewModel>() ? Get.find<AlbumsViewModel>() : Get.put(AlbumsViewModel());
   }
 
-  void _handleMenuSelection(int v, TrackData albumData, int trackCount) {
+  void _handleMenuSelection(int v, TrackData albumData, int trackCount) async {
+    final intent = QueueIntent.album(
+      album: albumData.album,
+      artist: albumData.artist,
+      trackCount: trackCount,
+    );
+
     switch (v) {
       case 0:
+        await queueActions.playNext(intent);
         break;
       case 1:
+        await queueActions.addToQueue(intent);
         break;
       case 2:
         PlaylistModal.open(

@@ -2,14 +2,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:music_player/screens/playlistModal.dart';
 import 'package:get/get.dart';
-import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/daos/track.dart';
+import 'package:music_player/db/repo/track.dart';
 import 'package:music_player/models/artistAlbums.dart';
 import 'package:music_player/models/artists.dart';
+import 'package:music_player/models/queueIntent.dart';
 import 'package:music_player/screens/albumTracks.dart';
 import 'package:music_player/screens/widgets/miniPlayer.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
+import 'package:music_player/services/LocatorService.dart';
+import 'package:music_player/services/MusicService.dart';
 
+import '../common/nav.dart';
 import '../models/playlistModal.dart';
 
 class ArtistAlbums extends StatefulWidget {
@@ -24,6 +28,9 @@ class ArtistAlbums extends StatefulWidget {
 
 class _ArtistAlbumsState extends State<ArtistAlbums> {
   late final ArtistAlbumsViewModel vm;
+  final queueActions = QueueActionHandler();
+  final trackRepo = getIt<TrackRepository>();
+  final music = getIt<MusicService>();
 
   @override
   void initState() {
@@ -34,11 +41,22 @@ class _ArtistAlbumsState extends State<ArtistAlbums> {
     );
   }
 
-  void _handleMenuSelection(int v, ArtistAlbumData albumData) {
+  void _handleMenuSelection(int v, ArtistAlbumData albumData) async {
+    final intent = QueueIntent.album(
+      album: albumData.album,
+      artist: widget.artistName,
+      trackCount: albumData.trackCount,
+    );
+
     switch (v) {
       case 0:
+        final tracks = await intent.resolveTracks(trackRepo);
+        if (tracks.isNotEmpty) {
+          await music.playAll(tracks);
+        }
         break;
       case 1:
+        await queueActions.addToQueue(intent);
         break;
       case 2:
         PlaylistModal.open(

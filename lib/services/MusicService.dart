@@ -79,7 +79,10 @@ class MusicService {
 
   Future<void> addToQueue(TrackData track) async => await handler.addQueueItem(track.toMediaItem());
 
-  Future<void> addAllToQueue(List<TrackData> tracks) async => await handler.addQueueItems(tracks.map((t) => t.toMediaItem()).toList());
+  Future<void> addAllToQueue(List<TrackData> tracks) async {
+    if (tracks.isEmpty) return;
+    await handler.addQueueItems(tracks.map((t) => t.toMediaItem()).toList());
+  }
 
   Future<void> removeFromQueue(int index) async => await handler.removeQueueItemAt(index);
 
@@ -90,6 +93,7 @@ class MusicService {
   }
 
   Future<void> playManyNext(List<TrackData> tracks) async {
+    if (tracks.isEmpty) return;
     final effIdx = handler.currEffectiveIdx;
     final idx = (effIdx ?? -1) + 1;
     await handler.addQueueItemsAt(tracks.map((t) => t.toMediaItem()).toList(), idx);

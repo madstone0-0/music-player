@@ -4,6 +4,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/mainTab.dart';
 import 'package:music_player/models/playlistModal.dart';
+import 'package:music_player/models/queueIntent.dart';
 import 'package:music_player/screens/library.dart';
 import 'package:music_player/screens/mainTab.dart';
 import 'package:music_player/screens/playlistModal.dart';
@@ -14,6 +15,7 @@ import 'package:music_player/services/PageManagerService.dart';
 import 'package:music_player/screens/widgets/trackCoverArt.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:music_player/common/trackNavigation.dart';
 
 class PlayerQueue extends StatefulWidget {
   const PlayerQueue({super.key});
@@ -24,6 +26,7 @@ class PlayerQueue extends StatefulWidget {
 
 class _PlayerQueueState extends State<PlayerQueue> {
   late final AutoScrollController _scrollController;
+  final queueActions = QueueActionHandler();
 
   bool _didInitialScroll = false;
 
@@ -140,10 +143,10 @@ class _PlayerQueueState extends State<PlayerQueue> {
                             PopupMenuItemData(value: 3, icon: Icons.album_rounded, label: 'View Album'),
                             PopupMenuItemData(value: 4, icon: Icons.person_rounded, label: 'View Artist'),
                           ],
-                          onSelected: (int selectedIdx) {
+                          onSelected: (int selectedIdx) async {
                             switch (selectedIdx) {
                               case 0:
-                                player.playNext(Q[idx].toTrackData());
+                                await queueActions.playNext(QueueIntent.track(Q[idx].toTrackData()));
                                 break;
                               case 1:
                                 player.removeFromQueue(idx);
@@ -155,8 +158,10 @@ class _PlayerQueueState extends State<PlayerQueue> {
                                 );
                                 break;
                               case 3:
+                                _openAlbum(context, Q[idx]);
                                 break;
                               case 4:
+                                _openArtist(context, Q[idx]);
                                 break;
                             }
                           },
@@ -196,5 +201,30 @@ class _PlayerQueueState extends State<PlayerQueue> {
         );
       },
     );
+  }
+
+  void _openAlbum(BuildContext context, MediaItem track) {
+    final ok = TrackNavigation.openAlbum(
+      context: context,
+      album: track.album,
+      artist: track.artist,
+    );
+
+    if (!ok) _showInfo(context, 'Album details not available for this track.');
+  }
+
+  void _openArtist(BuildContext context, MediaItem track) {
+    final target = TrackNavigation.resolveArtistTarget(track);
+    final ok = TrackNavigation.openArtist(
+      context: context,
+      artist: target.$1,
+      grouping: target.$2,
+    );
+
+    if (!ok) _showInfo(context, 'Artist details not available for this track.');
+  }
+
+  void _showInfo(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 }

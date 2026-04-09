@@ -312,7 +312,7 @@ class AudioPlayerHandlerService {
     await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
   }
 
-  Future<void> addQueueItemsAt (List<MediaItem> items, int effectiveIdx) async {
+  Future<void> addQueueItemsAt(List<MediaItem> items, int effectiveIdx) async {
     if (items.isEmpty) return;
 
     final visibleLen = Q.value.length;
@@ -326,10 +326,12 @@ class AudioPlayerHandlerService {
     final rawItems = _rawQueueItems();
     final order = _effectiveRawIndices();
 
+    var insertOffset = 0;
     for (final item in items) {
       rawItems.add(item);
       final newRawIndex = rawItems.length - 1;
-      order.insert(safeIdx, newRawIndex);
+      order.insert(safeIdx + insertOffset, newRawIndex);
+      insertOffset++;
     }
 
     await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);

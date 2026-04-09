@@ -5,6 +5,8 @@ import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/tracks.dart'; // Adjust import if VM is moved
+import 'package:music_player/common/trackNavigation.dart';
+import 'package:music_player/models/queueIntent.dart';
 import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/sort.dart';
@@ -12,7 +14,6 @@ import 'package:music_player/screens/widgets/trackRow.dart';
 import 'package:music_player/screens/widgets/azList.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
-import 'package:music_player/services/PlaylistService.dart';
 import '../models/playlistModal.dart';
 
 class Tracks extends StatefulWidget {
@@ -24,28 +25,57 @@ class Tracks extends StatefulWidget {
 
 class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
   final player = getIt<MusicService>();
-  final playlistSrc = getIt<PlaylistService>();
+  final queueActions = QueueActionHandler();
   late final TracksViewModel vm;
 
   @override
   bool get wantKeepAlive => true;
 
-  void _handleMenuSelection(int v, TrackData track) {
+  void _handleMenuSelection(int v, TrackData track) async {
+    final intent = QueueIntent.track(track);
+
     switch (v) {
       case 0:
-        player.playNext(track);
+        await queueActions.playNext(intent);
         break;
       case 1:
-        player.addToQueue(track);
+        await queueActions.addToQueue(intent);
         break;
       case 2:
         PlaylistModal.open(context, PlaylistAddIntent.track(track));
         break;
       case 3:
+        _openAlbum(track);
         break;
       case 4:
+        _openArtist(track);
         break;
     }
+  }
+
+  void _openAlbum(TrackData track) {
+    final ok = TrackNavigation.openAlbum(
+      context: context,
+      album: track.album,
+      artist: track.artist,
+    );
+
+    if (!ok) _showInfo('Album details not available for this track.');
+  }
+
+  void _openArtist(TrackData track) {
+    final target = TrackNavigation.resolveArtistTarget(track.toMediaItem());
+    final ok = TrackNavigation.openArtist(
+      context: context,
+      artist: target.$1,
+      grouping: target.$2,
+    );
+
+    if (!ok) _showInfo('Artist details not available for this track.');
+  }
+
+  void _showInfo(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

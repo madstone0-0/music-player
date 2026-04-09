@@ -6,9 +6,10 @@ import 'package:get/get.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/common/color.dart';
 import 'package:music_player/common/nav.dart';
-import 'package:music_player/db/db.dart';
+import 'package:music_player/common/trackNavigation.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/mainPlayer.dart';
+import 'package:music_player/screens/widgets/trackDetails.dart';
 import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/coverArt.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
@@ -76,12 +77,20 @@ class MainPlayerState extends State<MainPlayer> {
                     }
                     break;
                   case 1:
+                    final current = playerState.currentTrackNotifier.value;
+                    if (current != null) {
+                      TrackDetails.show(context, current);
+                    }
                     break;
                   case 2:
                     break;
                   case 3:
+                    final current = playerState.currentTrackNotifier.value;
+                    if (current != null) _openAlbum(current);
                     break;
                   case 4:
+                    final current = playerState.currentTrackNotifier.value;
+                    if (current != null) _openArtist(current);
                     break;
                 }
               },
@@ -98,7 +107,33 @@ class MainPlayerState extends State<MainPlayer> {
       ),
     );
   }
+
+  void _openAlbum(MediaItem track) {
+    final ok = TrackNavigation.openAlbum(
+      context: context,
+      album: track.album,
+      artist: track.artist,
+    );
+
+    if (!ok) _showInfo('Album details not available for this track.');
+  }
+
+  void _openArtist(MediaItem track) {
+    final target = TrackNavigation.resolveArtistTarget(track);
+    final ok = TrackNavigation.openArtist(
+      context: context,
+      artist: target.$1,
+      grouping: target.$2,
+    );
+
+    if (!ok) _showInfo('Artist details not available for this track.');
+  }
+
+  void _showInfo(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
 }
+
 
 class _PlayerBody extends StatelessWidget {
   const _PlayerBody({required this.track, required this.page, required this.vm});

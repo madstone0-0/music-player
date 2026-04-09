@@ -10,11 +10,13 @@ import 'package:music_player/db/repo/playlist.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
 import 'package:music_player/services/PageManagerService.dart';
+import 'package:music_player/models/queueIntent.dart';
 
 class PlaylistTracksViewModel extends GetxController {
   final PlaylistRepository _repo = getIt<PlaylistRepository>();
   final MusicService _player = getIt<MusicService>();
   final PlayerStateService _playerState = getIt<PlayerStateService>();
+  final QueueActionHandler _queueActions = QueueActionHandler();
 
   final isLoading = true.obs;
   final playlistName = RxnString();
@@ -107,18 +109,16 @@ class PlaylistTracksViewModel extends GetxController {
 
   Future<void> playNext(int index) async {
     if (index < 0 || index >= entries.length) return;
-    await _player.playNext(entries[index].track);
+    await _queueActions.playNext(QueueIntent.track(entries[index].track));
   }
 
   Future<void> addToQueue(int index) async {
     if (index < 0 || index >= entries.length) return;
-    await _player.addToQueue(entries[index].track);
+    await _queueActions.addToQueue(QueueIntent.track(entries[index].track));
   }
 
   Future<void> addAllToQueue() async {
-    for (final item in entries) {
-      await _player.addToQueue(item.track);
-    }
+    await _player.addAllToQueue(_tracks);
   }
 
   Future<void> removeEntryAt(int index) async {
