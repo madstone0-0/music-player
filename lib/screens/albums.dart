@@ -3,14 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/daos/track.dart';
+import 'package:music_player/db/db.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/albums.dart';
 import 'package:music_player/screens/albumTracks.dart';
+import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/albumItem.dart';
+import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/sort.dart';
 import 'package:music_player/screens/widgets/trackRow.dart';
 import 'package:music_player/screens/widgets/azList.dart';
 import 'package:music_player/screens/widgets/coverArt.dart';
+import 'package:music_player/services/LocatorService.dart';
+import 'package:music_player/services/MusicService.dart';
+
+import '../models/playlistModal.dart';
 
 class Albums extends StatefulWidget {
   const Albums({super.key});
@@ -23,11 +30,27 @@ class _AlbumsState extends State<Albums> with AutomaticKeepAliveClientMixin {
   _AlbumsState();
 
   late final AlbumsViewModel vm;
+  final player = getIt<MusicService>();
 
   @override
   void initState() {
     super.initState();
     vm = Get.isRegistered<AlbumsViewModel>() ? Get.find<AlbumsViewModel>() : Get.put(AlbumsViewModel());
+  }
+
+  void _handleMenuSelection(int v, TrackData albumData, int trackCount) {
+    switch (v) {
+      case 0:
+        break;
+      case 1:
+        break;
+      case 2:
+        PlaylistModal.open(
+          context,
+          PlaylistAddIntent.album(album: albumData.album, artist: albumData.artist, trackCount: trackCount),
+        );
+        break;
+    }
   }
 
   @override
@@ -72,9 +95,7 @@ class _AlbumsState extends State<Albums> with AutomaticKeepAliveClientMixin {
                 gridCrossAxisCount: vm.isGrid.value ? 2 : 1,
                 emptyMessage: 'No albums found, try scanning',
                 itemBuilder: (context, item, index) => Padding(
-                  padding: vm.isGrid.value
-                      ? const EdgeInsets.all(8.0)
-                      : AZList.itemPadding,
+                  padding: vm.isGrid.value ? const EdgeInsets.all(8.0) : AZList.itemPadding,
                   child: AlbumItem(
                     item: item,
                     isGrid: vm.isGrid.value,
@@ -83,6 +104,19 @@ class _AlbumsState extends State<Albums> with AutomaticKeepAliveClientMixin {
                       // id: NESTED_NAV_ID,
                       arguments: {"album": item.albumData.album, "artist": item.albumData.artist},
                       transition: Transition.rightToLeftWithFade,
+                    ),
+                    onLongPress: () => showModalBottomSheet(
+                      context: context,
+                      builder: (context) => PopupMenu(
+                        items: [
+                          PopupMenuItemData(value: 0, icon: Icons.queue_music_rounded, label: 'Play Next'),
+                          PopupMenuItemData(value: 1, icon: Icons.playlist_add_rounded, label: 'Add to Queue'),
+                          PopupMenuItemData(value: 2, icon: Icons.playlist_add_rounded, label: 'Add to Playlist'),
+                        ],
+                        onSelected: (v) => _handleMenuSelection(v, item.albumData, item.trackCount),
+                        longPress: true,
+                        scheme: scheme,
+                      ),
                     ),
                   ),
                 ),

@@ -6,10 +6,11 @@ import 'package:music_player/screens/widgets/coverArt.dart';
 import 'package:music_player/screens/widgets/gridItem.dart';
 
 class AlbumItem extends StatelessWidget {
-  const AlbumItem({super.key, required this.item, required this.onTap, this.isGrid = false});
+  const AlbumItem({super.key, required this.item, required this.onTap, this.isGrid = false, this.onLongPress});
 
   final AZAlbum item;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final bool isGrid;
 
   @override
@@ -25,6 +26,7 @@ class AlbumItem extends StatelessWidget {
     if (isGrid) {
       return GridItem(
         onTap: onTap,
+        onLongPress: onLongPress,
         title: albumTitle,
         subtitle: albumArtist,
         image: _AlbumArt(track: track, size: 96, tag: tag, isGrid: isGrid),
@@ -33,6 +35,7 @@ class AlbumItem extends StatelessWidget {
 
     return ListTile(
       onTap: onTap,
+      onLongPress: onLongPress,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       leading: _AlbumArt(track: track, size: size, tag: tag, isGrid: isGrid),
       title: Text(

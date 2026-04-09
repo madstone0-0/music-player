@@ -25,7 +25,7 @@ Future<List<TrackCompanion>> _parseMetadataTask(Map<String, dynamic> args) async
 class TrackRepository {
   TrackRepository(this._db, this._mediaService);
 
-  final AppDatabase _db;
+  final Db _db;
   final LocalMediaService _mediaService;
 
   Future<List<TrackData>> getAll() => _db.trackDao.getAllTracks();

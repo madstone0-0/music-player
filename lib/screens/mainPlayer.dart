@@ -7,13 +7,16 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/common/color.dart';
 import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/db.dart';
+import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/mainPlayer.dart';
+import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/coverArt.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/trackCoverArt.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/PageManagerService.dart';
 import "./widgets/controlButtons.dart";
+import '../models/playlistModal.dart';
 
 class MainPlayer extends StatefulWidget {
   const MainPlayer({super.key});
@@ -67,6 +70,10 @@ class MainPlayerState extends State<MainPlayer> {
               onSelected: (v) {
                 switch (v) {
                   case 0:
+                    final current = playerState.currentTrackNotifier.value;
+                    if (current != null) {
+                      PlaylistModal.open(context, PlaylistAddIntent.track(current.toTrackData()));
+                    }
                     break;
                   case 1:
                     break;

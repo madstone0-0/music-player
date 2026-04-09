@@ -54,7 +54,7 @@ OrderingTerm _order(dynamic t, TrackSortMode mode) {
 }
 
 @DriftAccessor(tables: [Track])
-class TrackDao extends DatabaseAccessor<AppDatabase> with _$TrackDaoMixin {
+class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
   TrackDao(super.attachedDatabase);
 
   Expression<bool> _isActive(Track t) => t.isIndexed.equals(true);

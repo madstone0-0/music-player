@@ -31,8 +31,8 @@ class _MyAppState extends State<MyApp> {
     if (getIt.isRegistered<AudioPlayerHandlerService>()) {
       getIt<AudioPlayerHandlerService>().dispose();
     }
-    if (getIt.isRegistered<PageManagerService>()) {
-      getIt<PageManagerService>().dispose();
+    if (getIt.isRegistered<PlayerStateService>()) {
+      getIt<PlayerStateService>().dispose();
     }
     super.dispose();
   }
@@ -78,7 +78,7 @@ class _PermissionGateState extends State<_PermissionGate> {
     await setupLocatorService();
     if (!mounted) return;
 
-    getIt<PageManagerService>().init();
+    getIt<PlayerStateService>().init();
     await getIt<MusicService>().restoreLastSession();
 
     Get.off(() => MainTab());

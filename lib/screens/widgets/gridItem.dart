@@ -4,11 +4,13 @@ class GridItem extends StatelessWidget {
   const GridItem({
     super.key,
     this.onTap,
+    this.onLongPress,
     required this.image,
     required this.title,
     required this.subtitle,
   });
 
+  final VoidCallback? onLongPress;
   final VoidCallback? onTap;
   final Widget image;
   final String title;
@@ -21,6 +23,7 @@ class GridItem extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       borderRadius: BorderRadius.circular(12),
       child: Column(
         mainAxisSize: MainAxisSize.min,

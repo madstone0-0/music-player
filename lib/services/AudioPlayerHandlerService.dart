@@ -312,6 +312,29 @@ class AudioPlayerHandlerService {
     await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
   }
 
+  Future<void> addQueueItemsAt (List<MediaItem> items, int effectiveIdx) async {
+    if (items.isEmpty) return;
+
+    final visibleLen = Q.value.length;
+    final safeIdx = effectiveIdx.clamp(0, visibleLen);
+
+    if (!player.shuffleModeEnabled) {
+      await player.insertAudioSources(safeIdx, _makeAudioSources(items));
+      return;
+    }
+
+    final rawItems = _rawQueueItems();
+    final order = _effectiveRawIndices();
+
+    for (final item in items) {
+      rawItems.add(item);
+      final newRawIndex = rawItems.length - 1;
+      order.insert(safeIdx, newRawIndex);
+    }
+
+    await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
+  }
+
   Future<void> updateMediaItem(MediaItem item) async {
     final rawItems = _rawQueueItems();
     final rawIdx = rawItems.indexWhere((e) => e.id == item.id);

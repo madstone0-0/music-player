@@ -3,8 +3,10 @@ import 'package:get/get.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/mainTab.dart';
+import 'package:music_player/models/playlistModal.dart';
 import 'package:music_player/screens/library.dart';
 import 'package:music_player/screens/mainTab.dart';
+import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
@@ -147,6 +149,10 @@ class _PlayerQueueState extends State<PlayerQueue> {
                                 player.removeFromQueue(idx);
                                 break;
                               case 2:
+                                PlaylistModal.open(
+                                  context,
+                                  PlaylistAddIntent.track(Q[idx].toTrackData()),
+                                );
                                 break;
                               case 3:
                                 break;

@@ -5,9 +5,12 @@ import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/models/artists.dart';
 import 'package:music_player/screens/artistAlbums.dart';
+import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/artistItem.dart';
 import 'package:music_player/screens/widgets/azList.dart';
+import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/sort.dart';
+import '../models/playlistModal.dart';
 
 class Artists extends StatefulWidget {
   const Artists({super.key, this.grouping = ArtistGrouping.artist});
@@ -33,6 +36,21 @@ class _ArtistsState extends State<Artists> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
+  void _handleMenuSelection(int v, ArtistData artist) {
+    switch (v) {
+      case 0:
+        break;
+      case 1:
+        break;
+      case 2:
+        PlaylistModal.open(
+          context,
+          PlaylistAddIntent.artist(artist: artist.name, grouping: widget.grouping, trackCount: artist.trackCount),
+        );
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -47,7 +65,9 @@ class _ArtistsState extends State<Artists> with AutomaticKeepAliveClientMixin {
             children: [
               Expanded(
                 child: SortSection<TrackSortMode>(
-                  options: const [SortChipOption(label: 'Name', asc: TrackSortMode.artistAsc, desc: TrackSortMode.artistDesc)],
+                  options: const [
+                    SortChipOption(label: 'Name', asc: TrackSortMode.artistAsc, desc: TrackSortMode.artistDesc),
+                  ],
                   currentMode: vm.sortMode,
                   onToggle: vm.toggleSort,
                 ),
@@ -78,6 +98,19 @@ class _ArtistsState extends State<Artists> with AutomaticKeepAliveClientMixin {
                         () => ArtistAlbums(artistName: item.artist.name, grouping: widget.grouping),
                         // id: NESTED_NAV_ID,
                         transition: Transition.rightToLeftWithFade,
+                      ),
+                      onLongPress: () => showModalBottomSheet(
+                        context: context,
+                        builder: (context) => PopupMenu(
+                          scheme: scheme,
+                          items: [
+                            PopupMenuItemData(value: 0, icon: Icons.play_arrow_rounded, label: 'Play Next'),
+                            PopupMenuItemData(value: 1, icon: Icons.queue_music_rounded, label: 'Add to Queue'),
+                            PopupMenuItemData(value: 2, icon: Icons.playlist_add_rounded, label: 'Add to Playlist'),
+                          ],
+                          onSelected: (v) => _handleMenuSelection(v, item.artist),
+                          longPress: true,
+                        ),
                       ),
                     ),
                   );

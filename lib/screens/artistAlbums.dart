@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:music_player/screens/playlistModal.dart';
 import 'package:get/get.dart';
 import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/daos/track.dart';
@@ -7,6 +8,9 @@ import 'package:music_player/models/artistAlbums.dart';
 import 'package:music_player/models/artists.dart';
 import 'package:music_player/screens/albumTracks.dart';
 import 'package:music_player/screens/widgets/miniPlayer.dart';
+import 'package:music_player/screens/widgets/popupMenu.dart';
+
+import '../models/playlistModal.dart';
 
 class ArtistAlbums extends StatefulWidget {
   const ArtistAlbums({super.key, required this.artistName, this.grouping = ArtistGrouping.artist});
@@ -30,6 +34,25 @@ class _ArtistAlbumsState extends State<ArtistAlbums> {
     );
   }
 
+  void _handleMenuSelection(int v, ArtistAlbumData albumData) {
+    switch (v) {
+      case 0:
+        break;
+      case 1:
+        break;
+      case 2:
+        PlaylistModal.open(
+          context,
+          PlaylistAddIntent.album(
+            album: albumData.album,
+            artist: widget.artistName,
+            trackCount: albumData.trackCount,
+          ),
+        );
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -43,10 +66,7 @@ class _ArtistAlbumsState extends State<ArtistAlbums> {
         scrolledUnderElevation: 0,
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Get.back(),
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back_rounded), onPressed: () => Get.back()),
         title: Text(
           widget.artistName,
           style: text.titleLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),
@@ -81,6 +101,20 @@ class _ArtistAlbumsState extends State<ArtistAlbums> {
                   arguments: {"album": albums[index].album, "artist": widget.artistName},
                   transition: Transition.rightToLeftWithFade,
                 ),
+                onLongPress: () => showModalBottomSheet(
+                  context: context,
+                  builder: (context) => PopupMenu(
+                    longPress: true,
+                    scheme: scheme,
+                    items: [
+                      PopupMenuItemData(value: 0, icon: Icons.play_arrow_rounded, label: 'Play'),
+                      PopupMenuItemData(value: 1, icon: Icons.queue_music_rounded, label: 'Add to Queue'),
+                      PopupMenuItemData(value: 2, icon: Icons.playlist_add_rounded, label: 'Add to Playlist'),
+                    ],
+                    onSelected: (v) =>
+                        _handleMenuSelection(v, albums[index]),
+                  ),
+                ),
               ),
             );
           }),
@@ -93,10 +127,11 @@ class _ArtistAlbumsState extends State<ArtistAlbums> {
 }
 
 class _AlbumCard extends StatelessWidget {
-  const _AlbumCard({required this.album, required this.onTap});
+  const _AlbumCard({required this.album, required this.onTap, this.onLongPress});
 
   final ArtistAlbumData album;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +140,7 @@ class _AlbumCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

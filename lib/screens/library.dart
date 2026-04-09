@@ -7,6 +7,7 @@ import 'package:music_player/models/artists.dart';
 import 'package:music_player/models/tracks.dart';
 import 'package:music_player/screens/albums.dart';
 import 'package:music_player/screens/artists.dart';
+import 'package:music_player/screens/playlists.dart';
 import 'package:music_player/screens/tracks.dart';
 import 'package:music_player/screens/widgets/search.dart';
 
@@ -25,7 +26,7 @@ class _LibraryState extends State<Library> with SingleTickerProviderStateMixin {
     (label: 'Albums', icon: Icons.album_outlined),
     (label: 'Album Artists', icon: Icons.person_outline),
     (label: 'Artists', icon: Icons.people_outline),
-    // (label: 'Playlists',  icon: Icons.queue_music_outlined),
+    (label: 'Playlists',  icon: Icons.queue_music_outlined),
     // (label: 'Genres',     icon: Icons.category_outlined),
   ];
 
@@ -97,8 +98,8 @@ class _LibraryState extends State<Library> with SingleTickerProviderStateMixin {
             Albums(),
             Artists(grouping: ArtistGrouping.albumArtist),
             Artists(),
+            Playlists(),
             // Genres(),
-            // Playlists(),
           ],
         ),
       ),

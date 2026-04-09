@@ -89,6 +89,12 @@ class MusicService {
     await handler.addQueueItemAt(track.toMediaItem(), idx);
   }
 
+  Future<void> playManyNext(List<TrackData> tracks) async {
+    final effIdx = handler.currEffectiveIdx;
+    final idx = (effIdx ?? -1) + 1;
+    await handler.addQueueItemsAt(tracks.map((t) => t.toMediaItem()).toList(), idx);
+  }
+
   Future<void> clearQueue() async {
     await handler.clearQueue();
   }

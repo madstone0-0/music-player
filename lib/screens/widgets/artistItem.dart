@@ -4,10 +4,11 @@ import 'package:music_player/models/artists.dart';
 import 'package:music_player/screens/widgets/gridItem.dart';
 
 class ArtistItem extends StatelessWidget {
-  const ArtistItem({super.key, required this.artist, this.onTap, this.isGrid = false});
+  const ArtistItem({super.key, required this.artist, this.onTap, this.isGrid = false, this.onLongPress});
 
   final ArtistData artist;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final bool isGrid;
 
   @override
@@ -19,6 +20,7 @@ class ArtistItem extends StatelessWidget {
     if (isGrid) {
       return GridItem(
         onTap: onTap,
+        onLongPress: onLongPress,
         image: _Avatar(coverPath: artist.coverPath, name: artist.name, scheme: scheme, radius: 48),
         title: artist.name,
         subtitle: trackText,
@@ -27,6 +29,7 @@ class ArtistItem extends StatelessWidget {
 
     return ListTile(
       onTap: onTap,
+      onLongPress: onLongPress,
       leading: _Avatar(coverPath: artist.coverPath, name: artist.name, scheme: scheme, radius: 24),
       title: Text(artist.name, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(trackText, style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),

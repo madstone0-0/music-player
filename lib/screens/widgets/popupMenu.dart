@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class PopupMenuItemData {
-  PopupMenuItemData({required this.value, required this.icon, required this.label});
+  const PopupMenuItemData({required this.value, required this.icon, required this.label});
 
   final int value;
   final IconData icon;

@@ -3,7 +3,7 @@
 part of 'track.dart';
 
 // ignore_for_file: type=lint
-mixin _$TrackDaoMixin on DatabaseAccessor<AppDatabase> {
+mixin _$TrackDaoMixin on DatabaseAccessor<Db> {
   $TrackTable get track => attachedDatabase.track;
   TrackDaoManager get managers => TrackDaoManager(this);
 }

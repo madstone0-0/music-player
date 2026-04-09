@@ -6,11 +6,14 @@ import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/albumTracks.dart';
+import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/albumTrackRow.dart';
 import 'package:music_player/screens/widgets/miniPlayer.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
+
+import '../models/playlistModal.dart';
 
 class AlbumTracks extends StatefulWidget {
   const AlbumTracks({super.key, this.grouping = ArtistGrouping.artist});
@@ -34,6 +37,7 @@ class _AlbumTracksState extends State<AlbumTracks> {
         player.addToQueue(track);
         break;
       case 2:
+        PlaylistModal.open(context, PlaylistAddIntent.track(track));
         break;
     }
   }
@@ -100,7 +104,7 @@ class _AlbumTracksState extends State<AlbumTracks> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.playlist_add_rounded),
-                      onPressed: () {},
+                      onPressed: _openAlbumAddModal,
                       tooltip: "Add to Playlist",
                     ),
                     IconButton(
@@ -146,7 +150,44 @@ class _AlbumTracksState extends State<AlbumTracks> {
     );
   }
 
+  void _openAlbumAddModal() {
+    final tracks = List<TrackData>.of(vm.tracks);
+    if (tracks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No tracks available to add.')),
+      );
+      return;
+    }
+
+    PlaylistModal.open(
+      context,
+      PlaylistAddIntent.album(
+        album: vm.albumName,
+        artist: vm.artistName,
+        tracks: tracks,
+        trackCount: tracks.length,
+      ),
+    );
+  }
+
   Widget _buildLargeArt(Uri? uri, ColorScheme scheme) {
+    // Try and get high res album art from first track
+    final art = vm.firstCoverArt;
+
+    if (art != null && art.bytes.isNotEmpty) {
+      return Hero(
+        tag: 'album_art_${vm.albumName}',
+        child: Image.memory(
+          art.bytes,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            color: scheme.surfaceContainerHighest,
+            child: Icon(Icons.album_rounded, size: 120, color: scheme.primary),
+          ),
+        ),
+      );
+    }
+
     if (uri == null || uri.toFilePath().isEmpty) {
       return Container(
         color: scheme.surfaceContainerHighest,

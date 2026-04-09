@@ -5,12 +5,15 @@ import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/tracks.dart'; // Adjust import if VM is moved
+import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/sort.dart';
 import 'package:music_player/screens/widgets/trackRow.dart';
 import 'package:music_player/screens/widgets/azList.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
+import 'package:music_player/services/PlaylistService.dart';
+import '../models/playlistModal.dart';
 
 class Tracks extends StatefulWidget {
   const Tracks({super.key});
@@ -21,6 +24,7 @@ class Tracks extends StatefulWidget {
 
 class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
   final player = getIt<MusicService>();
+  final playlistSrc = getIt<PlaylistService>();
   late final TracksViewModel vm;
 
   @override
@@ -35,6 +39,7 @@ class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
         player.addToQueue(track);
         break;
       case 2:
+        PlaylistModal.open(context, PlaylistAddIntent.track(track));
         break;
       case 3:
         break;
