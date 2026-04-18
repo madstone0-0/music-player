@@ -10,6 +10,7 @@ import 'package:music_player/screens/artists.dart';
 import 'package:music_player/screens/playlists.dart';
 import 'package:music_player/screens/tracks.dart';
 import 'package:music_player/screens/widgets/search.dart';
+import 'package:music_player/screens/widgets/searchResults.dart';
 
 class Library extends StatefulWidget {
   const Library({super.key});
@@ -112,7 +113,7 @@ class _LibraryState extends State<Library> with SingleTickerProviderStateMixin {
         hint: 'Search songs, albums, artists…',
         hintTitle: 'Search your library',
         hintSubtitle: 'Find songs, albums and artists',
-        resultsBuilder: (context, query) => _SearchResults(query: query),
+        resultsBuilder: (context, query) => SearchResults(query: query),
       ),
       transition: Transition.fadeIn,
     );
@@ -126,8 +127,6 @@ class _StyledTabBar extends StatelessWidget implements PreferredSizeWidget {
   final List<({String label, IconData icon})> tabs;
 
   @override
-  // kTextTabBarHeight (46) + TabBar's default indicatorWeight (2) = 48 px actual height.
-  // Declaring the full height prevents the SliverAppBar bottom from overflowing by 2 px.
   Size get preferredSize => const Size.fromHeight(kTextTabBarHeight + 2);
 
   @override
@@ -165,22 +164,6 @@ class _StyledTabBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           )
           .toList(),
-    );
-  }
-}
-
-class _SearchResults extends StatelessWidget {
-  const _SearchResults({required this.query});
-
-  final String query;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Results for "$query"',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-      ),
     );
   }
 }

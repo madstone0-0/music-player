@@ -34,7 +34,8 @@ class TrackRepository {
 
   Future<List<TrackData>> getByIds(List<int> ids) => _db.trackDao.getTracksByIds(ids);
 
-  Stream<List<TrackData>> watchAll({TrackSortMode mode = TrackSortMode.titleAsc}) => _db.trackDao.watchAllTracks(mode: mode);
+  Stream<List<TrackData>> watchAll({TrackSortMode mode = TrackSortMode.titleAsc}) =>
+      _db.trackDao.watchAllTracks(mode: mode);
 
   Future<List<TrackData>> getByAlbum(String album, {TrackSortMode mode = TrackSortMode.titleAsc}) async {
     final allTracks = await _db.trackDao.getAllTracks();
@@ -64,6 +65,18 @@ class TrackRepository {
     String name, {
     ArtistGrouping grouping = ArtistGrouping.artist,
   }) => _db.trackDao.watchAlbumsByArtist(name, grouping: grouping);
+
+  Future<List<TrackData>> searchTracks(String query, {int limit = 30}) =>
+      _db.trackDao.searchTracks(query, limit: limit);
+
+  Future<List<AlbumSearchRow>> searchAlbums(String query, {int limit = 30}) =>
+      _db.trackDao.searchAlbums(query, limit: limit);
+
+  Future<List<Map<String, dynamic>>> searchArtists(
+    String query, {
+    ArtistGrouping grouping = ArtistGrouping.artist,
+    int limit = 30,
+  }) => _db.trackDao.searchArtists(query, grouping: grouping, limit: limit);
 
   Future<TrackData?> findByPath(String path) => _db.trackDao.getTrackByPath(path);
 

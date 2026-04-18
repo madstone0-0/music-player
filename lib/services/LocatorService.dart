@@ -8,6 +8,7 @@ import 'package:music_player/services/LocalMediaService.dart';
 import 'package:music_player/services/MusicService.dart';
 import 'package:music_player/services/PlayerStateService.dart';
 import 'package:music_player/services/PlaylistService.dart';
+import 'package:music_player/services/SearchService.dart';
 
 GetIt getIt = GetIt.instance;
 
@@ -21,4 +22,5 @@ Future<void> setupLocatorService() async {
   getIt.registerSingleton<AudioPlayerHandlerService>(AudioPlayerHandlerService());
   getIt.registerLazySingleton<MusicService>(() => MusicService());
   getIt.registerLazySingleton<PlayerStateService>(() => PlayerStateService());
+  getIt.registerLazySingleton<SearchService>(() => SearchService(repo: getIt<TrackRepository>()));
 }

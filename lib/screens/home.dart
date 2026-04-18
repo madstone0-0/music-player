@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:music_player/common/nav.dart';
 import 'package:music_player/models/home.dart';
 import 'package:music_player/screens/widgets/search.dart';
+import 'package:music_player/screens/widgets/searchResults.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -106,7 +107,7 @@ class _HomeState extends State<Home> {
         hint: 'Search songs, albums, artists…',
         hintTitle: 'Search your library',
         hintSubtitle: 'Find songs, albums and artists',
-        resultsBuilder: (context, query) => _SearchResults(query: query),
+        resultsBuilder: (context, query) => SearchResults(query: query),
       ),
       transition: Transition.fadeIn,
     );
@@ -146,24 +147,6 @@ class _SearchBarLauncher extends StatelessWidget {
           padding: const EdgeInsets.only(left: 8),
           child: Icon(Icons.search_rounded, size: 18, color: scheme.onSurface.withValues(alpha: 0.28)),
         ),
-      ),
-    );
-  }
-}
-
-class _SearchResults extends StatelessWidget {
-  const _SearchResults({required this.query});
-
-  final String query;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Text(
-        'Results for "$query"',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
       ),
     );
   }

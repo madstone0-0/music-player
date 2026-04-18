@@ -22,7 +22,19 @@ enum TrackSortMode {
 
 enum ArtistGrouping { artist, albumArtist }
 
-typedef TrackScanSnapshot = ({String path, DateTime? lastModified});
+class TrackScanSnapshot {
+  final String path;
+  final DateTime? lastModified;
+
+  TrackScanSnapshot({required this.path, required this.lastModified});
+}
+
+class AlbumSearchRow {
+  final TrackData album;
+  final int? trackCount;
+
+  AlbumSearchRow({required this.album, required this.trackCount});
+}
 
 OrderingTerm _order(dynamic t, TrackSortMode mode) {
   switch (mode) {
@@ -57,6 +69,8 @@ OrderingTerm _order(dynamic t, TrackSortMode mode) {
 class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
   TrackDao(super.attachedDatabase);
 
+  String _searchPattern(String query) => '%${query.replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
+
   Expression<bool> _isActive(Track t) => t.isIndexed.equals(true);
 
   Future<List<TrackData>> getAllTracks() => (select(track)..where((t) => _isActive(t))).get();
@@ -70,7 +84,9 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
     final query = selectOnly(track)..addColumns([track.path, track.lastModified]);
     final rows = await query.get();
 
-    return rows.map((row) => (path: row.read(track.path)!, lastModified: row.read(track.lastModified))).toList();
+    return rows
+        .map((row) => TrackScanSnapshot(path: row.read(track.path)!, lastModified: row.read(track.lastModified)))
+        .toList();
   }
 
   Future<TrackData?> getTrackByPath(String filePath) {
@@ -298,5 +314,75 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
         lastModified: Value(lastModified),
       ),
     );
+  }
+
+  Future<List<TrackData>> searchTracks(String query, {int limit = 30}) {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return Future.value([]);
+
+    final pattern = _searchPattern(trimmed);
+
+    final trackQuery = select(track)
+      ..where(
+        (t) =>
+            _isActive(t) &
+            (t.title.like(pattern) | t.artist.like(pattern) | t.album.like(pattern) | t.albumArtist.like(pattern)),
+      )
+      ..orderBy([(t) => _order(t, TrackSortMode.titleAsc)])
+      ..limit(limit);
+
+    return trackQuery.get();
+  }
+
+  Future<List<AlbumSearchRow>> searchAlbums(String query, {int limit = 20}) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return [];
+
+    final pattern = _searchPattern(trimmed);
+    final trackCount = track.id.count();
+
+    final albumQuery = select(track).addColumns([trackCount])
+      ..where(
+        _isActive(track) &
+            track.album.isNotNull() &
+            (track.album.like(pattern) | track.albumArtist.like(pattern) | track.artist.like(pattern)),
+      )
+      ..groupBy([track.album, track.albumArtist])
+      ..orderBy([OrderingTerm(expression: track.album)])
+      ..limit(limit);
+
+    final rows = await albumQuery.get();
+
+    return rows
+        .map((row) => AlbumSearchRow(album: row.readTable(track), trackCount: row.read(trackCount)))
+        .where((row) => (row.album.album ?? '').trim().isNotEmpty)
+        .toList();
+  }
+
+  Future<List<Map<String, dynamic>>> searchArtists(
+    String query, {
+    ArtistGrouping grouping = ArtistGrouping.artist,
+    int limit = 20,
+  }) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return [];
+
+    final pattern = _searchPattern(trimmed);
+    final trackCount = track.id.count();
+    final column = grouping == ArtistGrouping.artist ? track.artist : track.albumArtist;
+
+    final artistQuery = select(track).addColumns([trackCount])
+      ..where(_isActive(track) & column.isNotNull() & column.like(pattern))
+      ..groupBy([column])
+      ..orderBy([OrderingTerm(expression: column)])
+      ..limit(limit);
+
+    final rows = await artistQuery.get();
+
+    return rows.map((row) {
+      final trackData = row.readTable(track);
+      final count = row.read(trackCount);
+      return {...trackData.toJson(), 'trackCount': count};
+    }).toList();
   }
 }
