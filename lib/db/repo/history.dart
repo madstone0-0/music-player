@@ -22,4 +22,12 @@ class HistoryRepository {
   Future<List<HistoryWithTrack>> getAllWithTracks() => _db.historyDao.getHistoryWithTracks();
 
   Stream<List<HistoryWithTrack>> watchAllWithTracks() => _db.historyDao.watchHistoryWithTracks();
+
+  Stream<List<HistoryWithTrack>> watchRecentWithTracks({int limit = 10}) =>
+      _db.historyDao.watchRecentHistoryWithTracks(limit: limit);
+
+  Stream<List<TrackPlayStat>> watchMostPlayed({int limit = 5}) => _db.historyDao.watchTopPlayedTracks(limit: limit);
+
+  Stream<List<PlaylistActivity>> watchRecentPlaylistActivity({int limit = 3}) =>
+      _db.historyDao.watchRecentPlaylistActivity(limit: limit);
 }

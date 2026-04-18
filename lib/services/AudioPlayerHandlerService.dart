@@ -68,6 +68,8 @@ class AudioPlayerHandlerService {
   final ValueNotifier<MediaItem?> curr = ValueNotifier(null);
   final historyRepo = getIt<HistoryRepository>();
   int? _lastLoggedTrackId;
+  Timer? _pendingLogTimer;
+  static const Duration _minPlayForLog = Duration(seconds: 3);
 
   Stream<Duration> get posS => player.positionStream;
 
@@ -121,6 +123,7 @@ class AudioPlayerHandlerService {
     _listenForDurationChanges();
     _listenForSequenceStateChanges();
     _listenForPlayHistoryLogging();
+    _listenForTrackAdvances();
     _listenAndSaveState();
   }
 
@@ -157,20 +160,79 @@ class AudioPlayerHandlerService {
   }
 
   void _listenForSequenceStateChanges() {
-    player.sequenceStateStream.listen((ss) {
+    player.sequenceStateStream.listen((ss) async {
       final sequence = ss.effectiveSequence;
       if (sequence.isEmpty) {
         Q.value = [];
         curr.value = null;
-        _lastLoggedTrackId = null;
+        _cancelPendingLog();
         return;
       }
 
       final items = sequence.map((src) => src.tag as MediaItem).toList();
+      final newCurr = ss.currentSource?.tag as MediaItem?;
+
+      // Only reset logging state when the actual track identity changes.
+      if (newCurr?.id != curr.value?.id) {
+        _lastLoggedTrackId = null;
+        _cancelPendingLog();
+      }
+
       Q.value = items;
-      curr.value = ss.currentSource?.tag as MediaItem?;
-      _lastLoggedTrackId = null;
+      curr.value = newCurr;
     });
+  }
+
+  void _listenForPlayHistoryLogging() {
+    player.playerStateStream.listen((state) {
+      if (state.playing &&
+          (state.processingState == ProcessingState.ready || state.processingState == ProcessingState.buffering)) {
+        _scheduleLog();
+      } else {
+        _cancelPendingLog();
+      }
+    });
+  }
+
+  void _listenForTrackAdvances() {
+    player.sequenceStateStream.listen((ss) {
+      final newId = (ss.currentSource?.tag as MediaItem?)?.id;
+      if (newId == null) return;
+
+      final loggedId = _lastLoggedTrackId?.toString();
+      if (newId != loggedId && newId != curr.value?.id) return;
+
+      _scheduleLog();
+    });
+  }
+
+  void _scheduleLog() {
+    final idx = player.currentIndex;
+    final sequence = player.sequence;
+    if (idx == null || idx >= sequence.length) return;
+
+    final currentId = int.tryParse((sequence[idx].tag as MediaItem).id);
+    if (currentId == null || currentId == _lastLoggedTrackId) return;
+
+    _cancelPendingLog();
+    _pendingLogTimer = Timer(_minPlayForLog, () {
+      final nowIdx = player.currentIndex;
+      final nowSequence = player.sequence;
+      if (nowIdx == null || nowIdx >= nowSequence.length) return;
+      final nowId = int.tryParse((nowSequence[nowIdx].tag as MediaItem).id);
+      if (nowId != currentId) return;
+      if (!player.playing) return;
+      final ps = player.processingState;
+      if (ps != ProcessingState.ready && ps != ProcessingState.buffering) return;
+
+      _lastLoggedTrackId = currentId;
+      historyRepo.addEntry(currentId);
+    });
+  }
+
+  void _cancelPendingLog() {
+    _pendingLogTimer?.cancel();
+    _pendingLogTimer = null;
   }
 
   void _listenAndSaveState() {
@@ -201,15 +263,6 @@ class AudioPlayerHandlerService {
     });
   }
 
-  void _listenForPlayHistoryLogging() {
-    player.playerStateStream.listen((state) {
-      if (!state.playing || state.processingState != ProcessingState.ready) return;
-      final currentId = int.tryParse(curr.value?.id ?? '');
-      if (currentId == null || currentId == _lastLoggedTrackId) return;
-      _lastLoggedTrackId = currentId;
-      historyRepo.addEntry(currentId);
-    });
-  }
 
   Future<void> restoreLastSession(List<MediaItem> savedQueue) async {
     if (savedQueue.isEmpty) return;
