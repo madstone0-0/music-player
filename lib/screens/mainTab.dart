@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/common/nav.dart';
 import 'package:music_player/models/mainTab.dart';
+import 'package:music_player/screens/history.dart';
 import 'package:music_player/screens/home.dart';
 import 'package:music_player/screens/scanMedia.dart';
 import 'package:music_player/screens/library.dart';
@@ -16,7 +17,7 @@ class MainTab extends StatelessWidget {
   final vm = Get.put(MainTabViewModel());
   final playerState = getIt<PlayerStateService>();
 
-  final List<Widget> screens = const [Home(), Library(), ScanMedia()];
+  final List<Widget> screens = const [Home(), Library(), History(), ScanMedia()];
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +60,11 @@ class MainTab extends StatelessWidget {
               icon: Icon(Icons.library_music_outlined),
               selectedIcon: Icon(Icons.library_music_rounded),
               label: 'Library',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.history_outlined),
+              selectedIcon: Icon(Icons.history_rounded),
+              label: 'History',
             ),
             NavigationDestination(
               icon: Icon(Icons.manage_search_outlined),

@@ -3,7 +3,8 @@ import 'package:get/get.dart';
 enum Tabs {
   HOME(0),
   LIBRARY(1),
-  SCAN(2);
+  HISTORY(2),
+  SCAN(3);
 
   final int val;
 

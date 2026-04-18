@@ -7,11 +7,12 @@ import 'package:music_player/screens/widgets/coverArt.dart';
 import 'package:music_player/screens/widgets/trackCoverArt.dart';
 
 class TrackRow extends StatefulWidget {
-  const TrackRow({super.key, required this.track, required this.onPressed, this.onLongPress});
+  const TrackRow({super.key, required this.track, required this.onPressed, this.onLongPress, this.trailing});
 
   final MediaItem track;
   final VoidCallback onPressed;
   final VoidCallback? onLongPress;
+  final Widget? trailing;
 
   @override
   State<TrackRow> createState() => _TrackRowState();
@@ -43,6 +44,7 @@ class _TrackRowState extends State<TrackRow> {
         overflow: TextOverflow.ellipsis,
         style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
       ),
+      trailing: widget.trailing,
     );
   }
 }
