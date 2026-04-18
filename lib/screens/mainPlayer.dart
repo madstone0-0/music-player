@@ -15,7 +15,7 @@ import 'package:music_player/screens/widgets/coverArt.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/trackCoverArt.dart';
 import 'package:music_player/services/LocatorService.dart';
-import 'package:music_player/services/PageManagerService.dart';
+import 'package:music_player/services/PlayerStateService.dart';
 import "./widgets/controlButtons.dart";
 import '../models/playlistModal.dart';
 

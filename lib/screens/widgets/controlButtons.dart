@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player/screens/widgets/playerQueue.dart';
-import 'package:music_player/services/PageManagerService.dart';
+import 'package:music_player/services/PlayerStateService.dart';
 
 class PrimaryControls extends StatelessWidget {
   const PrimaryControls({super.key, required this.page});

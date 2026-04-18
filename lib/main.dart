@@ -6,7 +6,7 @@ import 'package:music_player/screens/mainTab.dart';
 import 'package:music_player/services/AudioPlayerHandlerService.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
-import 'package:music_player/services/PageManagerService.dart';
+import 'package:music_player/services/PlayerStateService.dart';
 import 'package:music_player/services/RouteObserverService.dart';
 import 'package:permission_handler/permission_handler.dart';
 

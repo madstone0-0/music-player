@@ -9,7 +9,7 @@ import 'package:music_player/services/LocatorService.dart';
 
 import 'dart:async';
 
-import 'package:music_player/services/PageManagerService.dart';
+import 'package:music_player/services/PlayerStateService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MusicService {

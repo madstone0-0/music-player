@@ -4,7 +4,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/services/AudioTaggingService.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
-import 'package:music_player/services/PageManagerService.dart';
+import 'package:music_player/services/PlayerStateService.dart';
 
 class MainPlayerViewModel extends GetxController {
   final currTag = Tag(pictures: []).obs;

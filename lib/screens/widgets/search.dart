@@ -36,7 +36,6 @@ class _SearchScreenState extends State<SearchScreen> {
     _controller.addListener(() {
       setState(() => _query = _controller.text.trim());
     });
-    // Auto-focus so the keyboard appears immediately on push.
     WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
   }
 

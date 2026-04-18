@@ -1,22 +1,24 @@
 import 'package:get_it/get_it.dart';
 import 'package:music_player/db/db.dart';
+import 'package:music_player/db/repo/history.dart';
 import 'package:music_player/db/repo/playlist.dart';
 import 'package:music_player/db/repo/track.dart';
 import 'package:music_player/services/AudioPlayerHandlerService.dart';
 import 'package:music_player/services/LocalMediaService.dart';
 import 'package:music_player/services/MusicService.dart';
-import 'package:music_player/services/PageManagerService.dart';
+import 'package:music_player/services/PlayerStateService.dart';
 import 'package:music_player/services/PlaylistService.dart';
 
 GetIt getIt = GetIt.instance;
 
 Future<void> setupLocatorService() async {
   getIt.registerSingleton<Db>(Db());
-  getIt.registerSingleton<AudioPlayerHandlerService>(AudioPlayerHandlerService());
   getIt.registerSingleton<LocalMediaService>(await LocalMediaService.create());
   getIt.registerSingleton<TrackRepository>(TrackRepository(getIt<Db>(), getIt<LocalMediaService>()));
   getIt.registerSingleton<PlaylistRepository>(PlaylistRepository(getIt<Db>()));
+  getIt.registerSingleton<HistoryRepository>(HistoryRepository(getIt<Db>()));
   getIt.registerLazySingleton<PlaylistService>(() => PlaylistService(repo: getIt<PlaylistRepository>()));
+  getIt.registerSingleton<AudioPlayerHandlerService>(AudioPlayerHandlerService());
   getIt.registerLazySingleton<MusicService>(() => MusicService());
   getIt.registerLazySingleton<PlayerStateService>(() => PlayerStateService());
 }

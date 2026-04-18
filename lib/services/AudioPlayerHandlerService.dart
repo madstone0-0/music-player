@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
@@ -5,6 +6,8 @@ import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:music_player/db/repo/history.dart';
+import 'package:music_player/services/LocatorService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> initAudioService() async {
@@ -63,6 +66,8 @@ class AudioPlayerHandlerService {
   final player = AudioPlayer();
   final ValueNotifier<List<MediaItem>> Q = ValueNotifier([]);
   final ValueNotifier<MediaItem?> curr = ValueNotifier(null);
+  final historyRepo = getIt<HistoryRepository>();
+  int? _lastLoggedTrackId;
 
   Stream<Duration> get posS => player.positionStream;
 
@@ -115,6 +120,7 @@ class AudioPlayerHandlerService {
     await _loadEmptyPlaylist();
     _listenForDurationChanges();
     _listenForSequenceStateChanges();
+    _listenForPlayHistoryLogging();
     _listenAndSaveState();
   }
 
@@ -156,12 +162,14 @@ class AudioPlayerHandlerService {
       if (sequence.isEmpty) {
         Q.value = [];
         curr.value = null;
+        _lastLoggedTrackId = null;
         return;
       }
 
       final items = sequence.map((src) => src.tag as MediaItem).toList();
       Q.value = items;
       curr.value = ss.currentSource?.tag as MediaItem?;
+      _lastLoggedTrackId = null;
     });
   }
 
@@ -190,6 +198,16 @@ class AudioPlayerHandlerService {
         final prefs = _prefs ?? await SharedPreferences.getInstance();
         await prefs.setBool("played_to_end", true);
       }
+    });
+  }
+
+  void _listenForPlayHistoryLogging() {
+    player.playerStateStream.listen((state) {
+      if (!state.playing || state.processingState != ProcessingState.ready) return;
+      final currentId = int.tryParse(curr.value?.id ?? '');
+      if (currentId == null || currentId == _lastLoggedTrackId) return;
+      _lastLoggedTrackId = currentId;
+      historyRepo.addEntry(currentId);
     });
   }
 

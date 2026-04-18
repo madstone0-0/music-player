@@ -8,7 +8,7 @@ import 'package:music_player/screens/scanMedia.dart';
 import 'package:music_player/screens/library.dart';
 import 'package:music_player/screens/widgets/miniPlayer.dart';
 import 'package:music_player/services/LocatorService.dart';
-import 'package:music_player/services/PageManagerService.dart';
+import 'package:music_player/services/PlayerStateService.dart';
 
 class MainTab extends StatelessWidget {
   MainTab({super.key});

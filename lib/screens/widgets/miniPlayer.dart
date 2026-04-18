@@ -7,7 +7,7 @@ import 'package:music_player/db/db.dart';
 import 'package:music_player/screens/mainPlayer.dart';
 import 'package:music_player/screens/widgets/trackCoverArt.dart';
 import 'package:music_player/services/LocatorService.dart';
-import 'package:music_player/services/PageManagerService.dart';
+import 'package:music_player/services/PlayerStateService.dart';
 
 class MiniPlayer extends StatelessWidget {
   const MiniPlayer({super.key});
