@@ -26,7 +26,7 @@ class AlbumTracks extends StatefulWidget {
 }
 
 class _AlbumTracksState extends State<AlbumTracks> {
-  late final AlbumTracksViewModel vm;
+  AlbumTracksViewModel vm = Get.put(AlbumTracksViewModel(), tag: "${Get.arguments["album"] ?? ""}_${Get.arguments["artist"] ?? ""}");
   final player = getIt<MusicService>();
   final queueActions = QueueActionHandler();
 
@@ -49,7 +49,6 @@ class _AlbumTracksState extends State<AlbumTracks> {
   @override
   void initState() {
     super.initState();
-    vm = Get.put(AlbumTracksViewModel());
   }
 
   @override

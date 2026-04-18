@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
-import 'package:music_player/models/tracks.dart'; // Adjust import if VM is moved
+import 'package:music_player/models/tracks.dart';
 import 'package:music_player/common/trackNavigation.dart';
 import 'package:music_player/models/queueIntent.dart';
 import 'package:music_player/screens/playlistModal.dart';

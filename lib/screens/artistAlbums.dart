@@ -107,7 +107,6 @@ class _ArtistAlbumsState extends State<ArtistAlbums> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                // Extra room below the square artwork for title + subtitle.
                 childAspectRatio: 0.78,
               ),
               itemCount: albums.length,
@@ -115,7 +114,6 @@ class _ArtistAlbumsState extends State<ArtistAlbums> {
                 album: albums[index],
                 onTap: () => Get.to(
                   () => const AlbumTracks(),
-                  // id: NESTED_NAV_ID,
                   arguments: {"album": albums[index].album, "artist": widget.artistName},
                   transition: Transition.rightToLeftWithFade,
                 ),

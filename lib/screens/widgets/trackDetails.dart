@@ -29,7 +29,7 @@ class TrackDetails extends StatelessWidget {
 
     return SafeArea(
       child: FractionallySizedBox(
-        heightFactor: 0.85, // controls max height of sheet
+        heightFactor: 0.85,
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
           child: Column(

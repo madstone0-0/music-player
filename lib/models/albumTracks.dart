@@ -26,7 +26,6 @@ class AlbumTracksViewModel extends GetxController {
   void onInit() {
     super.onInit();
     tracks.bindStream(repo.watchByAlbumAndArtist(albumName, artistName));
-    // Listen to changes in the track list and update the current tag when the first track changes
     tracks.listen((ts) {
       if (ts.isEmpty) return;
       final firstTrack = ts.first;
