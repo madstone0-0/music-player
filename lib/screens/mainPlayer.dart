@@ -6,9 +6,10 @@ import 'package:get/get.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/common/color.dart';
 import 'package:music_player/common/nav.dart';
-import 'package:music_player/common/trackNavigation.dart';
+import 'package:music_player/intents/trackNavigation.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/mainPlayer.dart';
+import 'package:music_player/screens/widgets/editTags.dart';
 import 'package:music_player/screens/widgets/trackDetails.dart';
 import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/coverArt.dart';
@@ -64,9 +65,10 @@ class MainPlayerState extends State<MainPlayer> {
               items: [
                 PopupMenuItemData(value: 0, icon: Icons.playlist_add_rounded, label: 'Add to Playlist'),
                 PopupMenuItemData(value: 1, icon: Icons.info_outline, label: "Details"),
+                PopupMenuItemData(value: 2, icon: Icons.lyrics_outlined, label: "Lyrics"),
                 PopupMenuItemData(value: 3, icon: Icons.album_rounded, label: "View Album"),
                 PopupMenuItemData(value: 4, icon: Icons.person_rounded, label: "View Artist"),
-                PopupMenuItemData(value: 2, icon: Icons.lyrics_outlined, label: "Lyrics"),
+                PopupMenuItemData(value: 5, icon: Icons.edit_rounded, label: "Edit Tags"),
               ],
               onSelected: (v) {
                 switch (v) {
@@ -92,6 +94,9 @@ class MainPlayerState extends State<MainPlayer> {
                     final current = playerState.currentTrackNotifier.value;
                     if (current != null) _openArtist(current);
                     break;
+                  case 5:
+                    final current = playerState.currentTrackNotifier.value;
+                    if (current != null) _editTags(current);
                 }
               },
             ),
@@ -109,22 +114,14 @@ class MainPlayerState extends State<MainPlayer> {
   }
 
   void _openAlbum(MediaItem track) {
-    final ok = TrackNavigation.openAlbum(
-      context: context,
-      album: track.album,
-      artist: track.artist,
-    );
+    final ok = TrackNavigation.openAlbum(context: context, album: track.album, artist: track.artist);
 
     if (!ok) _showInfo('Album details not available for this track.');
   }
 
   void _openArtist(MediaItem track) {
     final target = TrackNavigation.resolveArtistTarget(track);
-    final ok = TrackNavigation.openArtist(
-      context: context,
-      artist: target.$1,
-      grouping: target.$2,
-    );
+    final ok = TrackNavigation.openArtist(context: context, artist: target.$1, grouping: target.$2);
 
     if (!ok) _showInfo('Artist details not available for this track.');
   }
@@ -132,8 +129,13 @@ class MainPlayerState extends State<MainPlayer> {
   void _showInfo(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
-}
 
+  Future<void> _editTags(MediaItem track) async {
+    final edited = await EditTags.open(context, track.toTrackData());
+    if (!mounted || edited == null) return;
+    _showInfo('Tags updated');
+  }
+}
 
 class _PlayerBody extends StatelessWidget {
   const _PlayerBody({required this.track, required this.page, required this.vm});

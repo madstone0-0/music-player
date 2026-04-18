@@ -104,16 +104,22 @@ class TrackRepository {
     required int id,
     required String title,
     String? artist,
+    String? albumArtist,
     String? album,
     String? genre,
+    int? trackNo,
+    int? year,
     DateTime? lastModified,
   }) {
     return _db.trackDao.updateTrackMetadata(
       id: id,
       title: title,
       artist: artist,
+      albumArtist: albumArtist,
       album: album,
       genre: genre,
+      trackNo: trackNo,
+      year: year,
       lastModified: lastModified,
     );
   }

@@ -6,7 +6,7 @@ import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/db/repo/track.dart';
 import 'package:music_player/models/artistAlbums.dart';
 import 'package:music_player/models/artists.dart';
-import 'package:music_player/models/queueIntent.dart';
+import 'package:music_player/intents/queueIntent.dart';
 import 'package:music_player/screens/albumTracks.dart';
 import 'package:music_player/screens/widgets/miniPlayer.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';

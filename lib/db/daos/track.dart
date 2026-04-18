@@ -302,15 +302,21 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
     required String title,
     String? artist,
     String? album,
+    String? albumArtist,
     String? genre,
+    int? trackNo,
+    int? year,
     DateTime? lastModified,
   }) {
     return (update(track)..where((t) => t.id.equals(id))).write(
       TrackCompanion(
         title: Value(title),
         artist: Value(artist),
+        albumArtist: Value(albumArtist),
         album: Value(album),
         genre: Value(genre),
+        trackNo: Value(trackNo),
+        year: Value(year),
         lastModified: Value(lastModified),
       ),
     );

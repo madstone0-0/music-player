@@ -10,7 +10,7 @@ import 'package:music_player/db/repo/playlist.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
 import 'package:music_player/services/PlayerStateService.dart';
-import 'package:music_player/models/queueIntent.dart';
+import 'package:music_player/intents/queueIntent.dart';
 
 class PlaylistTracksViewModel extends GetxController {
   final PlaylistRepository _repo = getIt<PlaylistRepository>();

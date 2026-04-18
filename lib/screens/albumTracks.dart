@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/common/nav.dart';
 import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/albumTracks.dart';
-import 'package:music_player/models/queueIntent.dart';
+import 'package:music_player/intents/queueIntent.dart';
 import 'package:music_player/screens/playlistModal.dart';
 import 'package:music_player/screens/widgets/albumTrackRow.dart';
+import 'package:music_player/screens/widgets/editTags.dart';
 import 'package:music_player/screens/widgets/miniPlayer.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/services/LocatorService.dart';
@@ -26,9 +28,22 @@ class AlbumTracks extends StatefulWidget {
 }
 
 class _AlbumTracksState extends State<AlbumTracks> {
-  AlbumTracksViewModel vm = Get.put(AlbumTracksViewModel(), tag: "${Get.arguments["album"] ?? ""}_${Get.arguments["artist"] ?? ""}");
+  AlbumTracksViewModel vm = Get.put(
+    AlbumTracksViewModel(),
+    tag: "${Get.arguments["album"] ?? ""}_${Get.arguments["artist"] ?? ""}",
+  );
   final player = getIt<MusicService>();
   final queueActions = QueueActionHandler();
+
+  void _showInfo(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _editTags(TrackData track) async {
+    final edited = await EditTags.open(context, track);
+    if (!mounted || edited == null) return;
+    _showInfo('Tags updated');
+  }
 
   void _handleMenuSelection(int v, TrackData track) async {
     final intent = QueueIntent.track(track);
@@ -42,6 +57,9 @@ class _AlbumTracksState extends State<AlbumTracks> {
         break;
       case 2:
         PlaylistModal.open(context, PlaylistAddIntent.track(track));
+        break;
+      case 3:
+        _editTags(track);
         break;
     }
   }
@@ -135,6 +153,7 @@ class _AlbumTracksState extends State<AlbumTracks> {
                               PopupMenuItemData(value: 0, icon: Icons.queue_music_rounded, label: 'Play Next'),
                               PopupMenuItemData(value: 1, icon: Icons.playlist_add_rounded, label: 'Add to Queue'),
                               PopupMenuItemData(value: 2, icon: Icons.playlist_add_rounded, label: 'Add to Playlist'),
+                              PopupMenuItemData(value: 3, icon: Icons.edit_rounded, label: 'Edit Tags'),
                             ],
                             onSelected: (v) => _handleMenuSelection(v, track),
                           ),
@@ -158,32 +177,20 @@ class _AlbumTracksState extends State<AlbumTracks> {
     if (tracks.isEmpty) return;
 
     await queueActions.addToQueue(
-      QueueIntent.album(
-        album: vm.albumName,
-        artist: vm.artistName,
-        tracks: tracks,
-        trackCount: tracks.length,
-      ),
+      QueueIntent.album(album: vm.albumName, artist: vm.artistName, tracks: tracks, trackCount: tracks.length),
     );
   }
 
   void _openAlbumAddModal() {
     final tracks = List<TrackData>.of(vm.tracks);
     if (tracks.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No tracks available to add.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No tracks available to add.')));
       return;
     }
 
     PlaylistModal.open(
       context,
-      PlaylistAddIntent.album(
-        album: vm.albumName,
-        artist: vm.artistName,
-        tracks: tracks,
-        trackCount: tracks.length,
-      ),
+      PlaylistAddIntent.album(album: vm.albumName, artist: vm.artistName, tracks: tracks, trackCount: tracks.length),
     );
   }
 

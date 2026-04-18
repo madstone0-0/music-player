@@ -41,16 +41,22 @@ extension MediaItemMapper on MediaItem {
 
   TrackData toTrackData() {
     final coverPath = artUri?.toFilePath();
-    final id = extras?["id"] ?? -1;
+    final id = extras?["id"] as int? ?? int.tryParse(this.id) ?? -1;
     final path = extras?["path"] as String? ?? '';
+    final trackNo = extras?["trackNo"] as int?;
+    final year = extras?["year"] as int?;
+    final albumArtist = extras?["albumArtist"] as String?;
     return TrackData(
       id: id,
+      trackNo: trackNo,
       title: title,
       artist: artist,
+      path: path,
+      albumArtist: albumArtist,
       album: album,
       genre: genre,
+      year: year,
       coverPath: coverPath,
-      path: path,
       isIndexed: true,
     );
   }

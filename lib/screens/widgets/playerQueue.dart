@@ -4,7 +4,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/mainTab.dart';
 import 'package:music_player/models/playlistModal.dart';
-import 'package:music_player/models/queueIntent.dart';
+import 'package:music_player/intents/queueIntent.dart';
 import 'package:music_player/screens/library.dart';
 import 'package:music_player/screens/mainTab.dart';
 import 'package:music_player/screens/playlistModal.dart';
@@ -15,7 +15,7 @@ import 'package:music_player/services/PlayerStateService.dart';
 import 'package:music_player/screens/widgets/trackCoverArt.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
-import 'package:music_player/common/trackNavigation.dart';
+import 'package:music_player/intents/trackNavigation.dart';
 
 class PlayerQueue extends StatefulWidget {
   const PlayerQueue({super.key});

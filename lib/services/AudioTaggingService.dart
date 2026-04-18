@@ -63,15 +63,23 @@ class AudioTaggingService {
     }
   }
 
-  static void write(TrackData track) async {
+  static Future<void> write(TrackData track) async {
     final tag = Tag(
       title: track.title,
       trackArtist: track.artist,
+      albumArtist: track.albumArtist,
       album: track.album,
       genre: track.genre,
+      year: track.year,
+      trackNumber: track.trackNo,
       pictures: [],
     );
 
-    await AudioTags.write(track.path, tag);
+    try {
+      await AudioTags.write(track.path, tag);
+    } catch (e) {
+      debugPrint('Tag write failed for ${track.path}: $e');
+      rethrow;
+    }
   }
 }

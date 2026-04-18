@@ -5,9 +5,10 @@ import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/tracks.dart';
-import 'package:music_player/common/trackNavigation.dart';
-import 'package:music_player/models/queueIntent.dart';
+import 'package:music_player/intents/trackNavigation.dart';
+import 'package:music_player/intents/queueIntent.dart';
 import 'package:music_player/screens/playlistModal.dart';
+import 'package:music_player/screens/widgets/editTags.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/sort.dart';
 import 'package:music_player/screens/widgets/trackRow.dart';
@@ -31,6 +32,12 @@ class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
+  Future<void> _editTags(TrackData track) async {
+    final edited = await EditTags.open(context, track);
+    if (!mounted || edited == null) return;
+    _showInfo('Tags updated');
+  }
+
   void _handleMenuSelection(int v, TrackData track) async {
     final intent = QueueIntent.track(track);
 
@@ -50,26 +57,21 @@ class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
       case 4:
         _openArtist(track);
         break;
+      case 5:
+        _editTags(track);
+        break;
     }
   }
 
   void _openAlbum(TrackData track) {
-    final ok = TrackNavigation.openAlbum(
-      context: context,
-      album: track.album,
-      artist: track.artist,
-    );
+    final ok = TrackNavigation.openAlbum(context: context, album: track.album, artist: track.artist);
 
     if (!ok) _showInfo('Album details not available for this track.');
   }
 
   void _openArtist(TrackData track) {
     final target = TrackNavigation.resolveArtistTarget(track.toMediaItem());
-    final ok = TrackNavigation.openArtist(
-      context: context,
-      artist: target.$1,
-      grouping: target.$2,
-    );
+    final ok = TrackNavigation.openArtist(context: context, artist: target.$1, grouping: target.$2);
 
     if (!ok) _showInfo('Artist details not available for this track.');
   }
@@ -126,6 +128,7 @@ class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
                           PopupMenuItemData(value: 2, icon: Icons.playlist_add_rounded, label: 'Add to Playlist'),
                           PopupMenuItemData(value: 3, icon: Icons.album_rounded, label: 'View Album'),
                           PopupMenuItemData(value: 4, icon: Icons.person_rounded, label: 'View Artist'),
+                          PopupMenuItemData(value: 5, icon: Icons.edit_rounded, label: 'Edit Tags'),
                         ],
                         onSelected: (v) => _handleMenuSelection(v, item.track),
                       ),

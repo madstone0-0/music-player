@@ -1,3 +1,4 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:music_player/common/color.dart';
@@ -85,9 +86,18 @@ class _PermissionGateState extends State<_PermissionGate> {
   }
 
   Future<bool> _requestStoragePermission() async {
-    final results = await [Permission.audio, Permission.storage].request();
+    final sdk = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
 
-    return results.values.any((s) => s == PermissionStatus.granted || s == PermissionStatus.limited);
+    if (sdk >= 30) {
+      if (sdk >= 33) await Permission.audio.request();
+
+      if (await Permission.manageExternalStorage.isGranted) return true;
+      final status = await Permission.manageExternalStorage.request();
+      return status.isGranted;
+    }
+
+    final results = await [Permission.audio, Permission.storage].request();
+    return results.values.any((s) => s.isGranted || s == PermissionStatus.limited);
   }
 
   @override
@@ -143,8 +153,9 @@ class _DeniedView extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'This app needs access to your audio files. '
-            'Please grant storage permission to continue.',
+            'This app needs full storage access to read and tag '
+            'your audio files. You will be taken to a system '
+            'settings screen — enable "Allow access to manage all files".',
             style: TextStyle(color: AppColor.secondaryText, fontSize: 13, height: 1.5),
             textAlign: TextAlign.center,
           ),

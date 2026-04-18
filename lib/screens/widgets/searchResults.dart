@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:music_player/common/trackNavigation.dart';
+import 'package:music_player/intents/trackNavigation.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/search.dart';
 import 'package:music_player/screens/widgets/artistItem.dart';
