@@ -1398,6 +1398,9 @@ class $HistoryTable extends History with TableInfo<$HistoryTable, HistoryData> {
     false,
     type: DriftSqlType.int,
     requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES track (id)',
+    ),
   );
   static const VerificationMeta _playedAtMeta = const VerificationMeta(
     'playedAt',
@@ -1734,6 +1737,24 @@ final class $$TrackTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$HistoryTable, List<HistoryData>>
+  _historyRefsTable(_$Db db) => MultiTypedResultKey.fromTable(
+    db.history,
+    aliasName: $_aliasNameGenerator(db.track.id, db.history.trackId),
+  );
+
+  $$HistoryTableProcessedTableManager get historyRefs {
+    final manager = $$HistoryTableTableManager(
+      $_db,
+      $_db.history,
+    ).filter((f) => f.trackId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_historyRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$TrackTableFilterComposer extends Composer<_$Db, $TrackTable> {
@@ -1820,6 +1841,31 @@ class $$TrackTableFilterComposer extends Composer<_$Db, $TrackTable> {
           }) => $$PlaylistEntryTableFilterComposer(
             $db: $db,
             $table: $db.playlistEntry,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> historyRefs(
+    Expression<bool> Function($$HistoryTableFilterComposer f) f,
+  ) {
+    final $$HistoryTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.history,
+      getReferencedColumn: (t) => t.trackId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HistoryTableFilterComposer(
+            $db: $db,
+            $table: $db.history,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -1971,6 +2017,31 @@ class $$TrackTableAnnotationComposer extends Composer<_$Db, $TrackTable> {
     );
     return f(composer);
   }
+
+  Expression<T> historyRefs<T extends Object>(
+    Expression<T> Function($$HistoryTableAnnotationComposer a) f,
+  ) {
+    final $$HistoryTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.history,
+      getReferencedColumn: (t) => t.trackId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HistoryTableAnnotationComposer(
+            $db: $db,
+            $table: $db.history,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TrackTableTableManager
@@ -1986,7 +2057,7 @@ class $$TrackTableTableManager
           $$TrackTableUpdateCompanionBuilder,
           (TrackData, $$TrackTableReferences),
           TrackData,
-          PrefetchHooks Function({bool playlistEntryRefs})
+          PrefetchHooks Function({bool playlistEntryRefs, bool historyRefs})
         > {
   $$TrackTableTableManager(_$Db db, $TrackTable table)
     : super(
@@ -2061,37 +2132,59 @@ class $$TrackTableTableManager
                     (e.readTable(table), $$TrackTableReferences(db, table, e)),
               )
               .toList(),
-          prefetchHooksCallback: ({playlistEntryRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (playlistEntryRefs) db.playlistEntry,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (playlistEntryRefs)
-                    await $_getPrefetchedData<
-                      TrackData,
-                      $TrackTable,
-                      PlaylistEntryData
-                    >(
-                      currentTable: table,
-                      referencedTable: $$TrackTableReferences
-                          ._playlistEntryRefsTable(db),
-                      managerFromTypedResult: (p0) => $$TrackTableReferences(
-                        db,
-                        table,
-                        p0,
-                      ).playlistEntryRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.trackId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({playlistEntryRefs = false, historyRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (playlistEntryRefs) db.playlistEntry,
+                    if (historyRefs) db.history,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (playlistEntryRefs)
+                        await $_getPrefetchedData<
+                          TrackData,
+                          $TrackTable,
+                          PlaylistEntryData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TrackTableReferences
+                              ._playlistEntryRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TrackTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).playlistEntryRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.trackId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (historyRefs)
+                        await $_getPrefetchedData<
+                          TrackData,
+                          $TrackTable,
+                          HistoryData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TrackTableReferences
+                              ._historyRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TrackTableReferences(db, table, p0).historyRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.trackId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -2108,7 +2201,7 @@ typedef $$TrackTableProcessedTableManager =
       $$TrackTableUpdateCompanionBuilder,
       (TrackData, $$TrackTableReferences),
       TrackData,
-      PrefetchHooks Function({bool playlistEntryRefs})
+      PrefetchHooks Function({bool playlistEntryRefs, bool historyRefs})
     >;
 typedef $$PlaylistTableCreateCompanionBuilder =
     PlaylistCompanion Function({
@@ -2805,6 +2898,29 @@ typedef $$HistoryTableUpdateCompanionBuilder =
       Value<DateTime> playedAt,
     });
 
+final class $$HistoryTableReferences
+    extends BaseReferences<_$Db, $HistoryTable, HistoryData> {
+  $$HistoryTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $TrackTable _trackIdTable(_$Db db) => db.track.createAlias(
+    $_aliasNameGenerator(db.history.trackId, db.track.id),
+  );
+
+  $$TrackTableProcessedTableManager get trackId {
+    final $_column = $_itemColumn<int>('track_id')!;
+
+    final manager = $$TrackTableTableManager(
+      $_db,
+      $_db.track,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_trackIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
 class $$HistoryTableFilterComposer extends Composer<_$Db, $HistoryTable> {
   $$HistoryTableFilterComposer({
     required super.$db,
@@ -2818,15 +2934,33 @@ class $$HistoryTableFilterComposer extends Composer<_$Db, $HistoryTable> {
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get trackId => $composableBuilder(
-    column: $table.trackId,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<DateTime> get playedAt => $composableBuilder(
     column: $table.playedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$TrackTableFilterComposer get trackId {
+    final $$TrackTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.trackId,
+      referencedTable: $db.track,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TrackTableFilterComposer(
+            $db: $db,
+            $table: $db.track,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$HistoryTableOrderingComposer extends Composer<_$Db, $HistoryTable> {
@@ -2842,15 +2976,33 @@ class $$HistoryTableOrderingComposer extends Composer<_$Db, $HistoryTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get trackId => $composableBuilder(
-    column: $table.trackId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<DateTime> get playedAt => $composableBuilder(
     column: $table.playedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$TrackTableOrderingComposer get trackId {
+    final $$TrackTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.trackId,
+      referencedTable: $db.track,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TrackTableOrderingComposer(
+            $db: $db,
+            $table: $db.track,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$HistoryTableAnnotationComposer extends Composer<_$Db, $HistoryTable> {
@@ -2864,11 +3016,31 @@ class $$HistoryTableAnnotationComposer extends Composer<_$Db, $HistoryTable> {
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<int> get trackId =>
-      $composableBuilder(column: $table.trackId, builder: (column) => column);
-
   GeneratedColumn<DateTime> get playedAt =>
       $composableBuilder(column: $table.playedAt, builder: (column) => column);
+
+  $$TrackTableAnnotationComposer get trackId {
+    final $$TrackTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.trackId,
+      referencedTable: $db.track,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TrackTableAnnotationComposer(
+            $db: $db,
+            $table: $db.track,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$HistoryTableTableManager
@@ -2882,9 +3054,9 @@ class $$HistoryTableTableManager
           $$HistoryTableAnnotationComposer,
           $$HistoryTableCreateCompanionBuilder,
           $$HistoryTableUpdateCompanionBuilder,
-          (HistoryData, BaseReferences<_$Db, $HistoryTable, HistoryData>),
+          (HistoryData, $$HistoryTableReferences),
           HistoryData,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool trackId})
         > {
   $$HistoryTableTableManager(_$Db db, $HistoryTable table)
     : super(
@@ -2918,9 +3090,54 @@ class $$HistoryTableTableManager
                 playedAt: playedAt,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$HistoryTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({trackId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (trackId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.trackId,
+                                referencedTable: $$HistoryTableReferences
+                                    ._trackIdTable(db),
+                                referencedColumn: $$HistoryTableReferences
+                                    ._trackIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ),
       );
 }
@@ -2935,9 +3152,9 @@ typedef $$HistoryTableProcessedTableManager =
       $$HistoryTableAnnotationComposer,
       $$HistoryTableCreateCompanionBuilder,
       $$HistoryTableUpdateCompanionBuilder,
-      (HistoryData, BaseReferences<_$Db, $HistoryTable, HistoryData>),
+      (HistoryData, $$HistoryTableReferences),
       HistoryData,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool trackId})
     >;
 
 class $DbManager {

@@ -1,3 +1,5 @@
+import 'package:music_player/db/daos/history.dart';
+
 import '../db.dart';
 
 class HistoryRepository {
@@ -16,4 +18,8 @@ class HistoryRepository {
   Future<int> removeById(int id) => _db.historyDao.deleteEntry(id);
 
   Future<int> clearAll() => _db.historyDao.clearHistory();
+
+  Future<List<HistoryWithTrack>> getAllWithTracks() => _db.historyDao.getHistoryWithTracks();
+
+  Stream<List<HistoryWithTrack>> watchAllWithTracks() => _db.historyDao.watchHistoryWithTracks();
 }

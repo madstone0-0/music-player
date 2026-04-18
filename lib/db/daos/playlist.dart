@@ -5,14 +5,7 @@ import 'package:music_player/db/tables/track.dart';
 
 part "playlist.g.dart";
 
-enum PlaylistSortMode {
-  nameAsc,
-  nameDesc,
-  createdAtAsc,
-  createdAtDesc,
-  updatedAtAsc,
-  updatedAtDesc,
-}
+enum PlaylistSortMode { nameAsc, nameDesc, createdAtAsc, createdAtDesc, updatedAtAsc, updatedAtDesc }
 
 OrderingTerm _order(dynamic t, PlaylistSortMode mode) {
   switch (mode) {
@@ -31,17 +24,28 @@ OrderingTerm _order(dynamic t, PlaylistSortMode mode) {
   }
 }
 
-typedef PlaylistWithCount = ({PlaylistData playlist, int trackCount});
-typedef PlaylistEntryWithTrack = ({PlaylistEntryData entry, TrackData track});
+class PlaylistWithCount {
+  PlaylistWithCount({required this.playlist, required this.trackCount});
+
+  final PlaylistData playlist;
+  final int trackCount;
+}
+
+class PlaylistEntryWithTrack {
+  PlaylistEntryWithTrack({required this.entry, required this.track});
+
+  final PlaylistEntryData entry;
+  final TrackData track;
+}
 
 @DriftAccessor(tables: [Playlist, PlaylistEntry, Track])
 class PlaylistDao extends DatabaseAccessor<Db> with _$PlaylistDaoMixin {
   PlaylistDao(super.attachedDatabase);
 
   Future<void> touchPlaylist(int playlistId) {
-    return (update(playlist)..where((p) => p.id.equals(playlistId))).write(
-      PlaylistCompanion(updatedAt: Value(DateTime.now())),
-    );
+    return (update(
+      playlist,
+    )..where((p) => p.id.equals(playlistId))).write(PlaylistCompanion(updatedAt: Value(DateTime.now())));
   }
 
   Future<int> insertPlaylist(PlaylistCompanion entry) {
@@ -56,15 +60,11 @@ class PlaylistDao extends DatabaseAccessor<Db> with _$PlaylistDaoMixin {
     return (delete(playlist)..where((p) => p.id.equals(id))).go();
   }
 
-  Future<List<PlaylistData>> getAllPlaylists({
-    PlaylistSortMode mode = PlaylistSortMode.updatedAtDesc,
-  }) {
+  Future<List<PlaylistData>> getAllPlaylists({PlaylistSortMode mode = PlaylistSortMode.updatedAtDesc}) {
     return (select(playlist)..orderBy([(p) => _order(p, mode)])).get();
   }
 
-  Stream<List<PlaylistData>> watchAllPlaylists({
-    PlaylistSortMode mode = PlaylistSortMode.updatedAtDesc,
-  }) {
+  Stream<List<PlaylistData>> watchAllPlaylists({PlaylistSortMode mode = PlaylistSortMode.updatedAtDesc}) {
     return (select(playlist)..orderBy([(p) => _order(p, mode)])).watch();
   }
 
@@ -80,9 +80,7 @@ class PlaylistDao extends DatabaseAccessor<Db> with _$PlaylistDaoMixin {
     PlaylistSortMode mode = PlaylistSortMode.updatedAtDesc,
   }) async {
     final countExp = playlistEntry.id.count();
-    final query = select(playlist).join([
-      leftOuterJoin(playlistEntry, playlistEntry.playlistId.equalsExp(playlist.id)),
-    ])
+    final query = select(playlist).join([leftOuterJoin(playlistEntry, playlistEntry.playlistId.equalsExp(playlist.id))])
       ..addColumns([countExp])
       ..groupBy([playlist.id])
       ..orderBy([_order(playlist, mode)]);
@@ -92,7 +90,7 @@ class PlaylistDao extends DatabaseAccessor<Db> with _$PlaylistDaoMixin {
     return rows.map((row) {
       final p = row.readTable(playlist);
       final count = row.read(countExp) ?? 0;
-      return (playlist: p, trackCount: count);
+      return PlaylistWithCount(playlist: p, trackCount: count);
     }).toList();
   }
 
@@ -100,9 +98,7 @@ class PlaylistDao extends DatabaseAccessor<Db> with _$PlaylistDaoMixin {
     PlaylistSortMode mode = PlaylistSortMode.updatedAtDesc,
   }) {
     final countExp = playlistEntry.id.count();
-    final query = select(playlist).join([
-      leftOuterJoin(playlistEntry, playlistEntry.playlistId.equalsExp(playlist.id)),
-    ])
+    final query = select(playlist).join([leftOuterJoin(playlistEntry, playlistEntry.playlistId.equalsExp(playlist.id))])
       ..addColumns([countExp])
       ..groupBy([playlist.id])
       ..orderBy([_order(playlist, mode)]);
@@ -111,7 +107,7 @@ class PlaylistDao extends DatabaseAccessor<Db> with _$PlaylistDaoMixin {
       return rows.map((row) {
         final p = row.readTable(playlist);
         final count = row.read(countExp) ?? 0;
-        return (playlist: p, trackCount: count);
+        return PlaylistWithCount(playlist: p, trackCount: count);
       }).toList();
     });
   }
@@ -128,10 +124,11 @@ class PlaylistDao extends DatabaseAccessor<Db> with _$PlaylistDaoMixin {
   }
 
   Future<bool> containsTrack(int playlistId, int trackId) async {
-    final row = await (select(playlistEntry)
-      ..where((pe) => pe.playlistId.equals(playlistId) & pe.trackId.equals(trackId))
-      ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (select(playlistEntry)
+              ..where((pe) => pe.playlistId.equals(playlistId) & pe.trackId.equals(trackId))
+              ..limit(1))
+            .getSingleOrNull();
     return row != null;
   }
 
@@ -151,63 +148,39 @@ class PlaylistDao extends DatabaseAccessor<Db> with _$PlaylistDaoMixin {
 
   Future<int> shiftPositionsUpFrom(int playlistId, int position) {
     return (update(playlistEntry)
-      ..where((pe) =>
-      pe.playlistId.equals(playlistId) &
-      pe.position.isBiggerOrEqualValue(position)))
-        .write(
-      PlaylistEntryCompanion.custom(
-        position: playlistEntry.position + const Constant(1),
-      ),
-    );
+          ..where((pe) => pe.playlistId.equals(playlistId) & pe.position.isBiggerOrEqualValue(position)))
+        .write(PlaylistEntryCompanion.custom(position: playlistEntry.position + const Constant(1)));
   }
 
   Future<int> shiftPositionsDownAfter(int playlistId, int position) {
     return (update(playlistEntry)
-      ..where((pe) =>
-      pe.playlistId.equals(playlistId) &
-      pe.position.isBiggerThanValue(position)))
-        .write(
-      PlaylistEntryCompanion.custom(
-        position: playlistEntry.position - const Constant(1),
-      ),
-    );
+          ..where((pe) => pe.playlistId.equals(playlistId) & pe.position.isBiggerThanValue(position)))
+        .write(PlaylistEntryCompanion.custom(position: playlistEntry.position - const Constant(1)));
   }
 
   Future<int> shiftPositionsDownInRange(int playlistId, int from, int to) {
     return (update(playlistEntry)
-      ..where((pe) =>
-      pe.playlistId.equals(playlistId) &
-      pe.position.isBetweenValues(from, to)))
-        .write(
-      PlaylistEntryCompanion.custom(
-        position: playlistEntry.position - const Constant(1),
-      ),
-    );
+          ..where((pe) => pe.playlistId.equals(playlistId) & pe.position.isBetweenValues(from, to)))
+        .write(PlaylistEntryCompanion.custom(position: playlistEntry.position - const Constant(1)));
   }
 
   Future<int> shiftPositionsUpInRange(int playlistId, int from, int to) {
     return (update(playlistEntry)
-      ..where((pe) =>
-      pe.playlistId.equals(playlistId) &
-      pe.position.isBetweenValues(from, to)))
-        .write(
-      PlaylistEntryCompanion.custom(
-        position: playlistEntry.position + const Constant(1),
-      ),
-    );
+          ..where((pe) => pe.playlistId.equals(playlistId) & pe.position.isBetweenValues(from, to)))
+        .write(PlaylistEntryCompanion.custom(position: playlistEntry.position + const Constant(1)));
   }
 
   Future<List<PlaylistEntryData>> getEntriesForPlaylist(int playlistId) {
     return (select(playlistEntry)
-      ..where((pe) => pe.playlistId.equals(playlistId))
-      ..orderBy([(pe) => OrderingTerm(expression: pe.position)]))
+          ..where((pe) => pe.playlistId.equals(playlistId))
+          ..orderBy([(pe) => OrderingTerm(expression: pe.position)]))
         .get();
   }
 
   Stream<List<PlaylistEntryData>> watchEntriesForPlaylist(int playlistId) {
     return (select(playlistEntry)
-      ..where((pe) => pe.playlistId.equals(playlistId))
-      ..orderBy([(pe) => OrderingTerm(expression: pe.position)]))
+          ..where((pe) => pe.playlistId.equals(playlistId))
+          ..orderBy([(pe) => OrderingTerm(expression: pe.position)]))
         .watch();
   }
 
@@ -217,8 +190,8 @@ class PlaylistDao extends DatabaseAccessor<Db> with _$PlaylistDaoMixin {
 
   Future<List<PlaylistEntryData>> getEntriesByTrackId(int playlistId, int trackId) {
     return (select(playlistEntry)
-      ..where((pe) => pe.playlistId.equals(playlistId) & pe.trackId.equals(trackId))
-      ..orderBy([(pe) => OrderingTerm(expression: pe.position)]))
+          ..where((pe) => pe.playlistId.equals(playlistId) & pe.trackId.equals(trackId))
+          ..orderBy([(pe) => OrderingTerm(expression: pe.position)]))
         .get();
   }
 
@@ -231,9 +204,7 @@ class PlaylistDao extends DatabaseAccessor<Db> with _$PlaylistDaoMixin {
   }
 
   Future<int> deleteEntriesByTrackId(int playlistId, int trackId) {
-    return (delete(playlistEntry)
-      ..where((pe) => pe.playlistId.equals(playlistId) & pe.trackId.equals(trackId)))
-        .go();
+    return (delete(playlistEntry)..where((pe) => pe.playlistId.equals(playlistId) & pe.trackId.equals(trackId))).go();
   }
 
   Future<int> deleteEntriesForPlaylist(int playlistId) {
@@ -241,35 +212,25 @@ class PlaylistDao extends DatabaseAccessor<Db> with _$PlaylistDaoMixin {
   }
 
   Future<List<PlaylistEntryWithTrack>> getPlaylistTracks(int playlistId) async {
-    final query = select(playlistEntry).join([
-      innerJoin(track, track.id.equalsExp(playlistEntry.trackId)),
-    ])
+    final query = select(playlistEntry).join([innerJoin(track, track.id.equalsExp(playlistEntry.trackId))])
       ..where(playlistEntry.playlistId.equals(playlistId))
       ..orderBy([OrderingTerm.asc(playlistEntry.position)]);
 
     final rows = await query.get();
 
     return rows
-        .map((row) => (
-    entry: row.readTable(playlistEntry),
-    track: row.readTable(track),
-    ))
+        .map((row) => PlaylistEntryWithTrack(entry: row.readTable(playlistEntry), track: row.readTable(track)))
         .toList();
   }
 
   Stream<List<PlaylistEntryWithTrack>> watchPlaylistTracks(int playlistId) {
-    final query = select(playlistEntry).join([
-      innerJoin(track, track.id.equalsExp(playlistEntry.trackId)),
-    ])
+    final query = select(playlistEntry).join([innerJoin(track, track.id.equalsExp(playlistEntry.trackId))])
       ..where(playlistEntry.playlistId.equals(playlistId))
       ..orderBy([OrderingTerm.asc(playlistEntry.position)]);
 
     return query.watch().map((rows) {
       return rows
-          .map((row) => (
-      entry: row.readTable(playlistEntry),
-      track: row.readTable(track),
-      ))
+          .map((row) => PlaylistEntryWithTrack(entry: row.readTable(playlistEntry), track: row.readTable(track)))
           .toList();
     });
   }
