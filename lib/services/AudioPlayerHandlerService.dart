@@ -263,7 +263,6 @@ class AudioPlayerHandlerService {
     });
   }
 
-
   Future<void> restoreLastSession(List<MediaItem> savedQueue) async {
     if (savedQueue.isEmpty) return;
 
@@ -300,6 +299,20 @@ class AudioPlayerHandlerService {
     return List<int>.from(player.effectiveIndices);
   }
 
+  void _emitSequenceSnapshot() {
+    final state = player.sequenceState;
+
+    final effective = state.effectiveSequence;
+    if (effective.isEmpty) {
+      Q.value = [];
+      curr.value = null;
+      return;
+    }
+
+    Q.value = effective.map((src) => src.tag as MediaItem).toList();
+    curr.value = state.currentSource?.tag as MediaItem?;
+  }
+
   Future<void> _rebuildQueuePreservingState({
     required List<MediaItem> rawItems,
     required bool shuffleEnabled,
@@ -328,6 +341,7 @@ class AudioPlayerHandlerService {
 
     await player.setLoopMode(loopMode);
     await player.setShuffleModeEnabled(shuffleEnabled);
+    _emitSequenceSnapshot();
 
     if (wasPlaying) {
       await player.play();

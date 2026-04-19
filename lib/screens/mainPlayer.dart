@@ -132,8 +132,14 @@ class MainPlayerState extends State<MainPlayer> {
 
   Future<void> _editTags(MediaItem track) async {
     final edited = await EditTags.open(context, track.toTrackData());
+    if (edited != null) {
+      final playerState = getIt<PlayerStateService>();
+      final current = playerState.currentTrackNotifier.value;
+      if (current != null && int.parse(current.id) == edited.id) {
+        playerState.currentTrackNotifier.value = edited.toMediaItem();
+      }
+    }
     if (!mounted || edited == null) return;
-    _showInfo('Tags updated');
   }
 }
 

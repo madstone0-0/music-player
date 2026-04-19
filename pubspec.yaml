@@ -55,6 +55,7 @@ dependencies:
   scroll_to_index: ^3.0.1
   intl: ^0.20.2
   device_info_plus: ^12.4.0
+  retrofit: ^4.9.2
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +69,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.32.1
   build_runner: ^2.13.1
+  retrofit_generator: ^10.0.1
+  json_serializable: ^6.10.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

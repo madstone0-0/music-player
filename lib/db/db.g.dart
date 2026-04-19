@@ -114,6 +114,17 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _durationMeta = const VerificationMeta(
+    'duration',
+  );
+  @override
+  late final GeneratedColumn<int> duration = GeneratedColumn<int>(
+    'duration',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _lastModifiedMeta = const VerificationMeta(
     'lastModified',
   );
@@ -152,6 +163,7 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
     genre,
     year,
     coverPath,
+    duration,
     lastModified,
     isIndexed,
   ];
@@ -231,6 +243,12 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
         coverPath.isAcceptableOrUnknown(data['cover_path']!, _coverPathMeta),
       );
     }
+    if (data.containsKey('duration')) {
+      context.handle(
+        _durationMeta,
+        duration.isAcceptableOrUnknown(data['duration']!, _durationMeta),
+      );
+    }
     if (data.containsKey('last_modified')) {
       context.handle(
         _lastModifiedMeta,
@@ -295,6 +313,10 @@ class $TrackTable extends Track with TableInfo<$TrackTable, TrackData> {
         DriftSqlType.string,
         data['${effectivePrefix}cover_path'],
       ),
+      duration: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration'],
+      ),
       lastModified: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_modified'],
@@ -323,6 +345,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
   final String? genre;
   final int? year;
   final String? coverPath;
+  final int? duration;
   final DateTime? lastModified;
   final bool isIndexed;
   const TrackData({
@@ -336,6 +359,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
     this.genre,
     this.year,
     this.coverPath,
+    this.duration,
     this.lastModified,
     required this.isIndexed,
   });
@@ -365,6 +389,9 @@ class TrackData extends DataClass implements Insertable<TrackData> {
     }
     if (!nullToAbsent || coverPath != null) {
       map['cover_path'] = Variable<String>(coverPath);
+    }
+    if (!nullToAbsent || duration != null) {
+      map['duration'] = Variable<int>(duration);
     }
     if (!nullToAbsent || lastModified != null) {
       map['last_modified'] = Variable<DateTime>(lastModified);
@@ -397,6 +424,9 @@ class TrackData extends DataClass implements Insertable<TrackData> {
       coverPath: coverPath == null && nullToAbsent
           ? const Value.absent()
           : Value(coverPath),
+      duration: duration == null && nullToAbsent
+          ? const Value.absent()
+          : Value(duration),
       lastModified: lastModified == null && nullToAbsent
           ? const Value.absent()
           : Value(lastModified),
@@ -420,6 +450,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
       genre: serializer.fromJson<String?>(json['genre']),
       year: serializer.fromJson<int?>(json['year']),
       coverPath: serializer.fromJson<String?>(json['coverPath']),
+      duration: serializer.fromJson<int?>(json['duration']),
       lastModified: serializer.fromJson<DateTime?>(json['lastModified']),
       isIndexed: serializer.fromJson<bool>(json['isIndexed']),
     );
@@ -438,6 +469,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
       'genre': serializer.toJson<String?>(genre),
       'year': serializer.toJson<int?>(year),
       'coverPath': serializer.toJson<String?>(coverPath),
+      'duration': serializer.toJson<int?>(duration),
       'lastModified': serializer.toJson<DateTime?>(lastModified),
       'isIndexed': serializer.toJson<bool>(isIndexed),
     };
@@ -454,6 +486,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
     Value<String?> genre = const Value.absent(),
     Value<int?> year = const Value.absent(),
     Value<String?> coverPath = const Value.absent(),
+    Value<int?> duration = const Value.absent(),
     Value<DateTime?> lastModified = const Value.absent(),
     bool? isIndexed,
   }) => TrackData(
@@ -467,6 +500,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
     genre: genre.present ? genre.value : this.genre,
     year: year.present ? year.value : this.year,
     coverPath: coverPath.present ? coverPath.value : this.coverPath,
+    duration: duration.present ? duration.value : this.duration,
     lastModified: lastModified.present ? lastModified.value : this.lastModified,
     isIndexed: isIndexed ?? this.isIndexed,
   );
@@ -484,6 +518,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
       genre: data.genre.present ? data.genre.value : this.genre,
       year: data.year.present ? data.year.value : this.year,
       coverPath: data.coverPath.present ? data.coverPath.value : this.coverPath,
+      duration: data.duration.present ? data.duration.value : this.duration,
       lastModified: data.lastModified.present
           ? data.lastModified.value
           : this.lastModified,
@@ -504,6 +539,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
           ..write('genre: $genre, ')
           ..write('year: $year, ')
           ..write('coverPath: $coverPath, ')
+          ..write('duration: $duration, ')
           ..write('lastModified: $lastModified, ')
           ..write('isIndexed: $isIndexed')
           ..write(')'))
@@ -522,6 +558,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
     genre,
     year,
     coverPath,
+    duration,
     lastModified,
     isIndexed,
   );
@@ -539,6 +576,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
           other.genre == this.genre &&
           other.year == this.year &&
           other.coverPath == this.coverPath &&
+          other.duration == this.duration &&
           other.lastModified == this.lastModified &&
           other.isIndexed == this.isIndexed);
 }
@@ -554,6 +592,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
   final Value<String?> genre;
   final Value<int?> year;
   final Value<String?> coverPath;
+  final Value<int?> duration;
   final Value<DateTime?> lastModified;
   final Value<bool> isIndexed;
   const TrackCompanion({
@@ -567,6 +606,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
     this.genre = const Value.absent(),
     this.year = const Value.absent(),
     this.coverPath = const Value.absent(),
+    this.duration = const Value.absent(),
     this.lastModified = const Value.absent(),
     this.isIndexed = const Value.absent(),
   });
@@ -581,6 +621,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
     this.genre = const Value.absent(),
     this.year = const Value.absent(),
     this.coverPath = const Value.absent(),
+    this.duration = const Value.absent(),
     this.lastModified = const Value.absent(),
     this.isIndexed = const Value.absent(),
   }) : path = Value(path),
@@ -596,6 +637,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
     Expression<String>? genre,
     Expression<int>? year,
     Expression<String>? coverPath,
+    Expression<int>? duration,
     Expression<DateTime>? lastModified,
     Expression<bool>? isIndexed,
   }) {
@@ -610,6 +652,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
       if (genre != null) 'genre': genre,
       if (year != null) 'year': year,
       if (coverPath != null) 'cover_path': coverPath,
+      if (duration != null) 'duration': duration,
       if (lastModified != null) 'last_modified': lastModified,
       if (isIndexed != null) 'is_indexed': isIndexed,
     });
@@ -626,6 +669,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
     Value<String?>? genre,
     Value<int?>? year,
     Value<String?>? coverPath,
+    Value<int?>? duration,
     Value<DateTime?>? lastModified,
     Value<bool>? isIndexed,
   }) {
@@ -640,6 +684,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
       genre: genre ?? this.genre,
       year: year ?? this.year,
       coverPath: coverPath ?? this.coverPath,
+      duration: duration ?? this.duration,
       lastModified: lastModified ?? this.lastModified,
       isIndexed: isIndexed ?? this.isIndexed,
     );
@@ -678,6 +723,9 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
     if (coverPath.present) {
       map['cover_path'] = Variable<String>(coverPath.value);
     }
+    if (duration.present) {
+      map['duration'] = Variable<int>(duration.value);
+    }
     if (lastModified.present) {
       map['last_modified'] = Variable<DateTime>(lastModified.value);
     }
@@ -700,6 +748,7 @@ class TrackCompanion extends UpdateCompanion<TrackData> {
           ..write('genre: $genre, ')
           ..write('year: $year, ')
           ..write('coverPath: $coverPath, ')
+          ..write('duration: $duration, ')
           ..write('lastModified: $lastModified, ')
           ..write('isIndexed: $isIndexed')
           ..write(')'))
@@ -1697,6 +1746,7 @@ typedef $$TrackTableCreateCompanionBuilder =
       Value<String?> genre,
       Value<int?> year,
       Value<String?> coverPath,
+      Value<int?> duration,
       Value<DateTime?> lastModified,
       Value<bool> isIndexed,
     });
@@ -1712,6 +1762,7 @@ typedef $$TrackTableUpdateCompanionBuilder =
       Value<String?> genre,
       Value<int?> year,
       Value<String?> coverPath,
+      Value<int?> duration,
       Value<DateTime?> lastModified,
       Value<bool> isIndexed,
     });
@@ -1812,6 +1863,11 @@ class $$TrackTableFilterComposer extends Composer<_$Db, $TrackTable> {
 
   ColumnFilters<String> get coverPath => $composableBuilder(
     column: $table.coverPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get duration => $composableBuilder(
+    column: $table.duration,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1934,6 +1990,11 @@ class $$TrackTableOrderingComposer extends Composer<_$Db, $TrackTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get duration => $composableBuilder(
+    column: $table.duration,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get lastModified => $composableBuilder(
     column: $table.lastModified,
     builder: (column) => ColumnOrderings(column),
@@ -1984,6 +2045,9 @@ class $$TrackTableAnnotationComposer extends Composer<_$Db, $TrackTable> {
 
   GeneratedColumn<String> get coverPath =>
       $composableBuilder(column: $table.coverPath, builder: (column) => column);
+
+  GeneratedColumn<int> get duration =>
+      $composableBuilder(column: $table.duration, builder: (column) => column);
 
   GeneratedColumn<DateTime> get lastModified => $composableBuilder(
     column: $table.lastModified,
@@ -2082,6 +2146,7 @@ class $$TrackTableTableManager
                 Value<String?> genre = const Value.absent(),
                 Value<int?> year = const Value.absent(),
                 Value<String?> coverPath = const Value.absent(),
+                Value<int?> duration = const Value.absent(),
                 Value<DateTime?> lastModified = const Value.absent(),
                 Value<bool> isIndexed = const Value.absent(),
               }) => TrackCompanion(
@@ -2095,6 +2160,7 @@ class $$TrackTableTableManager
                 genre: genre,
                 year: year,
                 coverPath: coverPath,
+                duration: duration,
                 lastModified: lastModified,
                 isIndexed: isIndexed,
               ),
@@ -2110,6 +2176,7 @@ class $$TrackTableTableManager
                 Value<String?> genre = const Value.absent(),
                 Value<int?> year = const Value.absent(),
                 Value<String?> coverPath = const Value.absent(),
+                Value<int?> duration = const Value.absent(),
                 Value<DateTime?> lastModified = const Value.absent(),
                 Value<bool> isIndexed = const Value.absent(),
               }) => TrackCompanion.insert(
@@ -2123,6 +2190,7 @@ class $$TrackTableTableManager
                 genre: genre,
                 year: year,
                 coverPath: coverPath,
+                duration: duration,
                 lastModified: lastModified,
                 isIndexed: isIndexed,
               ),

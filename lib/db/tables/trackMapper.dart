@@ -18,6 +18,7 @@ extension TrackMapper on TrackData {
         "albumArtist": albumArtist,
         "path": path,
         "id": id,
+        "duration": duration,
       },
     );
   }
@@ -36,6 +37,7 @@ extension MediaItemMapper on MediaItem {
       album: Value(album),
       genre: Value(genre),
       coverPath: Value(coverPath),
+      duration: Value(extras?["duration"] as int?),
     );
   }
 
@@ -46,6 +48,7 @@ extension MediaItemMapper on MediaItem {
     final trackNo = extras?["trackNo"] as int?;
     final year = extras?["year"] as int?;
     final albumArtist = extras?["albumArtist"] as String?;
+    final duration = extras?["duration"] as int?;
     return TrackData(
       id: id,
       trackNo: trackNo,
@@ -56,6 +59,7 @@ extension MediaItemMapper on MediaItem {
       album: album,
       genre: genre,
       year: year,
+      duration: duration,
       coverPath: coverPath,
       isIndexed: true,
     );

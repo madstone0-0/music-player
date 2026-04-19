@@ -28,6 +28,8 @@ class Track extends Table {
 
   TextColumn get coverPath => text().nullable()();
 
+  IntColumn get duration => integer().nullable()();
+
   DateTimeColumn get lastModified => dateTime().nullable()();
 
   BoolColumn get isIndexed => boolean().withDefault(const Constant(true))();

@@ -49,6 +49,7 @@ class AudioTaggingService {
         album: Value(tag.album),
         genre: Value(tag.genre),
         coverPath: Value(coverPath),
+        duration: Value(tag.duration),
         lastModified: Value(fileModifiedDate),
         isIndexed: const Value(true),
       );
