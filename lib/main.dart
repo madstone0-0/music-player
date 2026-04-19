@@ -102,8 +102,9 @@ class _PermissionGateState extends State<_PermissionGate> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColor.bg,
+      backgroundColor: scheme.surface,
       body: switch (_status) {
         _GateStatus.checking => const _CheckingView(),
         _GateStatus.denied => _DeniedView(onRetry: _bootstrap),
@@ -119,13 +120,14 @@ class _CheckingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColor.focus), strokeWidth: 2),
+          CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(scheme.primary), strokeWidth: 2),
           const SizedBox(height: 20),
-          Text('Setting up…', style: TextStyle(color: AppColor.secondaryText, fontSize: 13)),
+          Text('Setting up…', style: TextStyle(color: scheme.onSurface, fontSize: 13)),
         ],
       ),
     );
@@ -139,16 +141,17 @@ class _DeniedView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.folder_off_outlined, color: AppColor.secondaryText, size: 52),
+          Icon(Icons.folder_off_outlined, color: scheme.onSurface, size: 52),
           const SizedBox(height: 24),
           Text(
             'Storage access required',
-            style: TextStyle(color: AppColor.primaryText, fontSize: 18, fontWeight: FontWeight.w600),
+            style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
@@ -156,7 +159,7 @@ class _DeniedView extends StatelessWidget {
             'This app needs full storage access to read and tag '
             'your audio files. You will be taken to a system '
             'settings screen — enable "Allow access to manage all files".',
-            style: TextStyle(color: AppColor.secondaryText, fontSize: 13, height: 1.5),
+            style: TextStyle(color: scheme.onSurface, fontSize: 13, height: 1.5),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -165,7 +168,7 @@ class _DeniedView extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColor.focus,
+                backgroundColor: scheme.onSurface,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -178,7 +181,7 @@ class _DeniedView extends StatelessWidget {
           const SizedBox(height: 12),
           TextButton(
             onPressed: openAppSettings,
-            child: Text('Open app settings', style: TextStyle(color: AppColor.secondaryText, fontSize: 13)),
+            child: Text('Open app settings', style: TextStyle(color: scheme.onSurface, fontSize: 13)),
           ),
         ],
       ),

@@ -7,7 +7,7 @@ import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/tracks.dart';
 import 'package:music_player/intents/trackNavigation.dart';
 import 'package:music_player/intents/queueIntent.dart';
-import 'package:music_player/screens/playlistModal.dart';
+import 'package:music_player/screens/widgets/playlistModal.dart';
 import 'package:music_player/screens/widgets/editTags.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/sort.dart';

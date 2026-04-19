@@ -9,9 +9,10 @@ import 'package:music_player/common/nav.dart';
 import 'package:music_player/intents/trackNavigation.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/mainPlayer.dart';
+import 'package:music_player/screens/lyrics.dart';
 import 'package:music_player/screens/widgets/editTags.dart';
 import 'package:music_player/screens/widgets/trackDetails.dart';
-import 'package:music_player/screens/playlistModal.dart';
+import 'package:music_player/screens/widgets/playlistModal.dart';
 import 'package:music_player/screens/widgets/coverArt.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/trackCoverArt.dart';
@@ -85,6 +86,10 @@ class MainPlayerState extends State<MainPlayer> {
                     }
                     break;
                   case 2:
+                    final current = playerState.currentTrackNotifier.value;
+                    if (current != null) {
+                      Get.to(() => LyricsDisplay(track: current), transition: Transition.downToUp);
+                    }
                     break;
                   case 3:
                     final current = playerState.currentTrackNotifier.value;

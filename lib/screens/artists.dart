@@ -5,7 +5,7 @@ import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/models/artists.dart';
 import 'package:music_player/screens/artistAlbums.dart';
 import 'package:music_player/intents/queueIntent.dart';
-import 'package:music_player/screens/playlistModal.dart';
+import 'package:music_player/screens/widgets/playlistModal.dart';
 import 'package:music_player/screens/widgets/artistItem.dart';
 import 'package:music_player/screens/widgets/azList.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';

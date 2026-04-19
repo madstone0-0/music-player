@@ -71,7 +71,7 @@ class LyricsService {
 
   static bool areLyricsSynced(String lyrics) {
     // If the lyrics contain timestamps like , we consider them synced
-    final timestampRegex = RegExp(r'\[\d{2}:\d{2}:\d{2}\]');
+    final timestampRegex = RegExp(r'\[\d{1,2}:\d{2}(?:\.\d{1,3})?\]');
     return timestampRegex.hasMatch(lyrics);
   }
 }

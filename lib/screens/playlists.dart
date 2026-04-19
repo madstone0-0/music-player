@@ -264,12 +264,6 @@ class _PlaylistsState extends State<Playlists> with AutomaticKeepAliveClientMixi
                           textAlign: TextAlign.center,
                           style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
                         ),
-                        const SizedBox(height: 20),
-                        FilledButton.icon(
-                          onPressed: _showCreatePlaylistDialog,
-                          icon: const Icon(Icons.add_rounded),
-                          label: const Text('Create playlist'),
-                        ),
                       ],
                     ),
                   ),

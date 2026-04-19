@@ -7,7 +7,7 @@ import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/albumTracks.dart';
 import 'package:music_player/intents/queueIntent.dart';
-import 'package:music_player/screens/playlistModal.dart';
+import 'package:music_player/screens/widgets/playlistModal.dart';
 import 'package:music_player/screens/widgets/albumTrackRow.dart';
 import 'package:music_player/screens/widgets/editTags.dart';
 import 'package:music_player/screens/widgets/miniPlayer.dart';

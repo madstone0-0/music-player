@@ -7,7 +7,7 @@ import 'package:music_player/models/playlistModal.dart';
 import 'package:music_player/intents/queueIntent.dart';
 import 'package:music_player/screens/library.dart';
 import 'package:music_player/screens/mainTab.dart';
-import 'package:music_player/screens/playlistModal.dart';
+import 'package:music_player/screens/widgets/playlistModal.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';

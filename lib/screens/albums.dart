@@ -6,7 +6,7 @@ import 'package:music_player/db/db.dart';
 import 'package:music_player/models/albums.dart';
 import 'package:music_player/intents/queueIntent.dart';
 import 'package:music_player/screens/albumTracks.dart';
-import 'package:music_player/screens/playlistModal.dart';
+import 'package:music_player/screens/widgets/playlistModal.dart';
 import 'package:music_player/screens/widgets/albumItem.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/sort.dart';

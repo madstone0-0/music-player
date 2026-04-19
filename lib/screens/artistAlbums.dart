@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:music_player/screens/playlistModal.dart';
+import 'package:music_player/screens/widgets/playlistModal.dart';
 import 'package:get/get.dart';
 import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/db/repo/track.dart';

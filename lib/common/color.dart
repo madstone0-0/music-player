@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-const _seedPrimary = Color(0xff89b4f9);
-const _seedSecondary = Color(0xffC2185B);
-const _seedTertiary = Color(0xffFFAB00);
+const _seedPrimary = Color(0xff89b4f9); // unchanged — sky blue
+const _seedSecondary = Color(0xffA78BFA); // soft violet, replaces the clashing pink
+const _seedTertiary = Color(0xffFFAB00); // warm amber, unchanged — good complement
 
 class AppTheme {
   AppTheme._();
@@ -12,12 +12,16 @@ class AppTheme {
       seedColor: _seedPrimary,
       brightness: Brightness.dark,
 
-      surface: const Color(0xff1E2235),
-      surfaceContainerLowest: const Color(0xff181B2C),
-      surfaceContainerLow: const Color(0xff1E2235),
-      surfaceContainer: const Color(0xff252840),
-      surfaceContainerHigh: const Color(0xff2C3050),
-      surfaceContainerHighest: const Color(0xff383B49),
+      // Surfaces stripped of blue saturation → near-black neutrals.
+      // Primary (#89b4f9) now has real contrast to pop against these.
+      surfaceContainerLowest: const Color(0xff07080F),
+      // near-AMOLED black
+      surfaceContainerLow: const Color(0xff0D0F18),
+      surface: const Color(0xff111320),
+      surfaceContainer: const Color(0xff171929),
+      surfaceContainerHigh: const Color(0xff1D1F30),
+      // lyrics card — dark enough for white text contrast
+      surfaceContainerHighest: const Color(0xff232537),
 
       primary: _seedPrimary,
       secondary: _seedSecondary,
@@ -43,6 +47,7 @@ class AppTheme {
     );
   }
 
+  // light theme unchanged — surface shift only matters for dark
   static ThemeData get light {
     final scheme = ColorScheme.fromSeed(
       seedColor: _seedPrimary,
@@ -70,8 +75,6 @@ class AppTheme {
     );
   }
 
-  /// Shared component-level theme configuration.  Each getter above applies it
-  /// then overrides the brightness-specific surface/appBar colours with copyWith.
   static ThemeData _buildTheme(ColorScheme scheme) {
     return ThemeData(
       useMaterial3: true,
@@ -166,60 +169,4 @@ class AppTheme {
       ),
     );
   }
-}
-
-class AppColor {
-  AppColor._();
-
-  // Derive from the dark scheme so the values stay in sync.
-  static final _scheme = AppTheme.dark.colorScheme;
-
-  static Color get primary => _scheme.primary;
-
-  static Color get focus => _scheme.primary; // was 0xffD9519D
-  static Color get unfocused => _scheme.onSurfaceVariant;
-
-  static Color get focusStart => _scheme.tertiary; // was 0xffED8770
-  static Color get secondaryEnd => _scheme.secondary; // was 0xff657DDF
-  static Color get org => const Color(0xffE1914B); // no M3 role — keep as-is
-
-  static Color get primaryText => _scheme.onSurface;
-
-  static Color get primaryText80 => _scheme.onSurface.withValues(alpha: 0.8);
-
-  static Color get primaryText60 => _scheme.onSurface.withValues(alpha: 0.6);
-
-  static Color get primaryText35 => _scheme.onSurface.withValues(alpha: 0.35);
-
-  static Color get primaryText28 => _scheme.onSurface.withValues(alpha: 0.28);
-
-  static Color get secondaryText => _scheme.onSurfaceVariant;
-
-  static Color get bg => _scheme.surfaceContainerLowest;
-
-  static Color get darkGray => _scheme.surfaceContainerHighest;
-
-  static Color get lightGray => _scheme.outlineVariant;
-
-  static List<Color> get primaryG => [focusStart, focus];
-
-  static List<Color> get secondaryG => [primary, secondaryEnd];
-}
-
-// ─── HexColor extension (unchanged) ─────────────────────────────────────────
-
-extension HexColor on Color {
-  static Color fromHex(String hexString) {
-    final buffer = StringBuffer();
-    if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
-    buffer.write(hexString.replaceFirst('#', ''));
-    return Color(int.parse(buffer.toString(), radix: 16));
-  }
-
-  String toHex({bool leadingHashSign = true}) =>
-      '${leadingHashSign ? '#' : ''}'
-      '${alpha.toRadixString(16).padLeft(2, '0')}'
-      '${red.toRadixString(16).padLeft(2, '0')}'
-      '${green.toRadixString(16).padLeft(2, '0')}'
-      '${blue.toRadixString(16).padLeft(2, '0')}';
 }
