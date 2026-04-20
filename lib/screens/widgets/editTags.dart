@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -201,25 +199,14 @@ class _EditTagsState extends State<EditTags> {
       );
 
       await AudioTaggingService.write(updated);
-      final lastModified = await File(updated.path).lastModified();
-
       final repo = getIt<TrackRepository>();
-      await repo.updateFromFile(
-        id: updated.id,
-        title: updated.title,
-        artist: updated.artist,
-        albumArtist: updated.albumArtist,
-        album: updated.album,
-        genre: updated.genre,
-        trackNo: updated.trackNo,
-        year: updated.year,
-        lastModified: lastModified,
-      );
+      await repo.singleRescan(updated);
+      final refreshed = await repo.getById(updated.id);
 
       await getIt<MusicService>().syncQueueWithDb();
 
       if (!mounted) return;
-      Navigator.of(context).pop(updated);
+      Navigator.of(context).pop(refreshed);
       messenger.showSnackBar(const SnackBar(content: Text('Tags updated')));
     } catch (e) {
       if (!mounted) return;
