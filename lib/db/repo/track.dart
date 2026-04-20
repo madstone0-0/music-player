@@ -135,9 +135,10 @@ class TrackRepository {
     if (total == 0) return 0;
 
     final snapshots = await _db.trackDao.getTrackScanSnapshots();
-    final dbMap = <String, DateTime?>{for (final row in snapshots) row.path: row.lastModified};
+    final dbMap = <String, TrackScanSnapshot>{for (final row in snapshots) row.path: row};
 
     final pathsToRead = <String>[];
+    final pathsToRestore = <String>[];
     final currentPathsOnDisk = <String>{};
     const int batchSize = 100;
 
@@ -145,11 +146,14 @@ class TrackRepository {
       final file = files[i];
       currentPathsOnDisk.add(file.path);
 
-      final dbModified = dbMap[file.path];
+      final snapshot = dbMap[file.path];
+      final dbModified = snapshot?.lastModified;
       final needsUpdate = overwrite || dbModified == null || dbModified.isBefore(file.modifiedAt);
 
       if (needsUpdate) {
         pathsToRead.add(file.path);
+      } else if (snapshot != null && !snapshot.isIndexed) {
+        pathsToRestore.add(file.path);
       }
 
       onProgress?.call(i + 1, total, file.path);
@@ -162,6 +166,10 @@ class TrackRepository {
 
     if (pathsToRead.isNotEmpty) {
       await _processAndSaveBatch(List<String>.from(pathsToRead));
+    }
+
+    if (pathsToRestore.isNotEmpty) {
+      await _db.trackDao.restoreTracksByPaths(pathsToRestore);
     }
 
     final pathsMissingFromDisk = dbMap.keys.where((path) => !currentPathsOnDisk.contains(path)).toList();

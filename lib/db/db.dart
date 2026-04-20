@@ -33,13 +33,8 @@ class Db extends _$Db {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     return driftDatabase(
-      name: 'test_db_8.db',
-      native: const DriftNativeOptions(
-        // By default, `driftDatabase` from `package:drift_flutter` stores the
-        // database files in `getApplicationDocumentsDirectory()`.
-        databaseDirectory: getApplicationSupportDirectory,
-      ),
-      // If you need web support, see https://drift.simonbinder.eu/platforms/web/
+      name: 'db.db',
+      native: const DriftNativeOptions(databaseDirectory: getApplicationSupportDirectory),
     );
   });
 }

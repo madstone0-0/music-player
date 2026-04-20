@@ -25,8 +25,9 @@ enum ArtistGrouping { artist, albumArtist }
 class TrackScanSnapshot {
   final String path;
   final DateTime? lastModified;
+  final bool isIndexed;
 
-  TrackScanSnapshot({required this.path, required this.lastModified});
+  TrackScanSnapshot({required this.path, required this.lastModified, required this.isIndexed});
 }
 
 class AlbumSearchRow {
@@ -81,11 +82,17 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
       (select(track)..where((t) => t.id.isIn(ids) & _isActive(t))).get();
 
   Future<List<TrackScanSnapshot>> getTrackScanSnapshots() async {
-    final query = selectOnly(track)..addColumns([track.path, track.lastModified]);
+    final query = selectOnly(track)..addColumns([track.path, track.lastModified, track.isIndexed]);
     final rows = await query.get();
 
     return rows
-        .map((row) => TrackScanSnapshot(path: row.read(track.path)!, lastModified: row.read(track.lastModified)))
+        .map(
+          (row) => TrackScanSnapshot(
+            path: row.read(track.path)!,
+            lastModified: row.read(track.lastModified),
+            isIndexed: row.read(track.isIndexed)!,
+          ),
+        )
         .toList();
   }
 
