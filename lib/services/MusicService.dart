@@ -69,8 +69,9 @@ class MusicService {
     final List<MediaItem> q = tracks.map((t) => t.toMediaItem()).toList();
 
     if (shuffle) {
-      await handler.setShuffleMode(true);
+      await handler.setShuffleMode(false);
       await handler.setNewPlaylist(q, safeIndex);
+      await handler.setShuffleMode(true);
     } else {
       await handler.setShuffleMode(false);
       await handler.setNewPlaylist(q, safeIndex);

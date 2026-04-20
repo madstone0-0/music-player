@@ -26,14 +26,29 @@ Future<void> initAudioService() async {
 class FixedShuffleOrder extends ShuffleOrder {
   @override
   final List<int> indices;
+  final List<int> _preferredInitialOrder;
 
-  FixedShuffleOrder(List<int> indices) : indices = List<int>.from(indices);
+  FixedShuffleOrder(List<int> indices)
+    : _preferredInitialOrder = List<int>.from(indices),
+      indices = List<int>.from(indices);
 
   @override
   void clear() => indices.clear();
 
   @override
   void insert(int index, int count) {
+    final usePreferredInitialOrder =
+        indices.isEmpty &&
+        index == 0 &&
+        _preferredInitialOrder.length == count &&
+        _preferredInitialOrder.toSet().length == count &&
+        _preferredInitialOrder.every((i) => i >= 0 && i < count);
+
+    if (usePreferredInitialOrder) {
+      indices.addAll(_preferredInitialOrder);
+      return;
+    }
+
     // When inserting, we add the new indices at the end of the shuffle order, and then shift any existing indices
     // that are greater than or equal to the insertion point to account for the new items.
     final inserted = List.generate(count, (i) => index + i);
@@ -283,15 +298,19 @@ class AudioPlayerHandlerService {
     });
 
     shuffleS.listen((enabled) async {
-      if (!enabled) return;
       final prefs = _prefs ?? await SharedPreferences.getInstance();
       await prefs.setBool('shuffle_enabled', enabled);
     });
 
     player.sequenceStateStream.listen((ss) async {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      final effective = ss.effectiveSequence;
-      await prefs.setString('shuffle_order', effective.join(','));
+      if (!ss.shuffleModeEnabled) {
+        await prefs.remove('shuffle_order');
+        return;
+      }
+
+      final effectiveIndices = player.effectiveIndices;
+      await prefs.setString('shuffle_order', effectiveIndices.join(','));
     });
 
     playerSS.listen((state) async {
