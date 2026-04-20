@@ -1,8 +1,9 @@
-import 'dart:async';
-import 'dart:collection';
-import 'dart:io';
+/// This service manages the audio player instance and provides methods to manipulate the playback queue and control playback.
+/// It also handles logging play history and restoring the last session state.
+library;
 
-import 'package:drift/drift.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -10,6 +11,7 @@ import 'package:music_player/db/repo/history.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Initializes the JustAudioBackground service with the appropriate configuration for Android notifications.
 Future<void> initAudioService() async {
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.madstone.music_player.channel.audio',
@@ -20,6 +22,7 @@ Future<void> initAudioService() async {
   );
 }
 
+/// A custom ShuffleOrder implementation that preserves the shuffle order across playlist modifications.
 class FixedShuffleOrder extends ShuffleOrder {
   @override
   final List<int> indices;
@@ -31,6 +34,8 @@ class FixedShuffleOrder extends ShuffleOrder {
 
   @override
   void insert(int index, int count) {
+    // When inserting, we add the new indices at the end of the shuffle order, and then shift any existing indices
+    // that are greater than or equal to the insertion point to account for the new items.
     final inserted = List.generate(count, (i) => index + i);
     for (var i = 0; i < indices.length; i++) {
       if (indices[i] >= index) {
@@ -42,6 +47,8 @@ class FixedShuffleOrder extends ShuffleOrder {
 
   @override
   void removeRange(int start, int end) {
+    // When removing a range, we remove any indices that fall within the removed range, and then shift any existing
+    // indices that are greater than or equal to the end of the removed range to account for the removed items.
     final removedCount = end - start;
     indices.removeWhere((i) => i >= start && i < end);
     for (var i = 0; i < indices.length; i++) {
@@ -53,6 +60,8 @@ class FixedShuffleOrder extends ShuffleOrder {
 
   @override
   void shuffle({int? initialIndex}) {
+    // The shuffle order is fixed, so we don't actually shuffle the indices. However, we do want to move the initial index
+    // to the front of the order if it's provided, so that playback starts from the expected item.
     if (initialIndex == null) return;
     final pos = indices.indexOf(initialIndex);
     if (pos > 0) {
@@ -64,7 +73,11 @@ class FixedShuffleOrder extends ShuffleOrder {
 
 class AudioPlayerHandlerService {
   final player = AudioPlayer();
+
+  /// The current effective queue of media items, reflecting the current shuffle order and any modifications.
   final ValueNotifier<List<MediaItem>> Q = ValueNotifier([]);
+
+  /// The currently playing media item, or null if no item is currently active.
   final ValueNotifier<MediaItem?> curr = ValueNotifier(null);
   final historyRepo = getIt<HistoryRepository>();
   int? _lastLoggedTrackId;
@@ -103,6 +116,7 @@ class AudioPlayerHandlerService {
 
   int? get currIdx => player.currentIndex;
 
+  /// Computes the current effective index in the visible queue (Q) based on the player's current index and shuffle order.
   int? get currEffectiveIdx {
     final raw = player.currentIndex;
     if (raw == null) return null;
@@ -117,6 +131,7 @@ class AudioPlayerHandlerService {
     _init();
   }
 
+  /// Initializes the service by loading the empty playlist, setting up listeners for player state changes, and preparing to restore the last session state.
   Future<void> _init() async {
     _prefs = await SharedPreferences.getInstance();
     await _loadEmptyPlaylist();
@@ -127,6 +142,7 @@ class AudioPlayerHandlerService {
     _listenAndSaveState();
   }
 
+  /// Loads an empty playlist into the audio player to ensure it's in a known state before any operations are performed.
   Future<void> _loadEmptyPlaylist() async {
     try {
       await player.setAudioSources(
@@ -140,6 +156,8 @@ class AudioPlayerHandlerService {
     }
   }
 
+  /// Listens for changes in the duration of the current media item and updates the corresponding item in the queue ([Q])
+  /// to reflect the new duration. This ensures that any UI components displaying the queue have the most up-to-date information about each item's duration.
   void _listenForDurationChanges() {
     durS.listen((dur) {
       final current = curr.value;
@@ -159,6 +177,7 @@ class AudioPlayerHandlerService {
     });
   }
 
+  /// Listens for changes in the player's sequence state, which can occur when the queue is modified, shuffle mode is toggled, or the current track changes.
   void _listenForSequenceStateChanges() {
     player.sequenceStateStream.listen((ss) async {
       final sequence = ss.effectiveSequence;
@@ -172,7 +191,6 @@ class AudioPlayerHandlerService {
       final items = sequence.map((src) => src.tag as MediaItem).toList();
       final newCurr = ss.currentSource?.tag as MediaItem?;
 
-      // Only reset logging state when the actual track identity changes.
       if (newCurr?.id != curr.value?.id) {
         _lastLoggedTrackId = null;
         _cancelPendingLog();
@@ -183,6 +201,9 @@ class AudioPlayerHandlerService {
     });
   }
 
+  /// Listens for changes in the player's state to determine when to log play history. When playback starts or resumes,
+  /// it schedules a log entry after a minimum play duration. If playback is paused, stopped, or if the track changes
+  /// before the minimum duration is reached, it cancels the pending log entry.
   void _listenForPlayHistoryLogging() {
     player.playerStateStream.listen((state) {
       if (state.playing &&
@@ -194,6 +215,7 @@ class AudioPlayerHandlerService {
     });
   }
 
+  /// Listens for changes in the player's current track (as indicated by the sequence state) to determine when to log play history.
   void _listenForTrackAdvances() {
     player.sequenceStateStream.listen((ss) {
       final newId = (ss.currentSource?.tag as MediaItem?)?.id;
@@ -206,6 +228,7 @@ class AudioPlayerHandlerService {
     });
   }
 
+  /// Schedules a log entry for the currently playing track after a minimum play duration. It checks that the track is still the same
   void _scheduleLog() {
     final idx = player.currentIndex;
     final sequence = player.sequence;
@@ -230,11 +253,15 @@ class AudioPlayerHandlerService {
     });
   }
 
+  /// Cancels any pending log entry that was scheduled but has not yet been executed.
+  /// This is typically called when playback is paused, stopped, or when the track changes before the minimum play duration is reached.
   void _cancelPendingLog() {
     _pendingLogTimer?.cancel();
     _pendingLogTimer = null;
   }
 
+  /// Listens for changes in the player's current index, position, queue, shuffle mode,
+  /// and processing state to save the current session state to shared preferences.
   void _listenAndSaveState() {
     currIdxS.listen((idx) async {
       if (idx == null) return;
@@ -255,6 +282,18 @@ class AudioPlayerHandlerService {
       await prefs.setStringList('last_queue_ids', ids);
     });
 
+    shuffleS.listen((enabled) async {
+      if (!enabled) return;
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      await prefs.setBool('shuffle_enabled', enabled);
+    });
+
+    player.sequenceStateStream.listen((ss) async {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final effective = ss.effectiveSequence;
+      await prefs.setString('shuffle_order', effective.join(','));
+    });
+
     playerSS.listen((state) async {
       if (state.processingState == ProcessingState.completed && !playing) {
         final prefs = _prefs ?? await SharedPreferences.getInstance();
@@ -263,6 +302,7 @@ class AudioPlayerHandlerService {
     });
   }
 
+  /// Restores the last session state from shared preferences, including the last played track, position, queue, and shuffle mode.
   Future<void> restoreLastSession(List<MediaItem> savedQueue) async {
     if (savedQueue.isEmpty) return;
 
@@ -270,35 +310,58 @@ class AudioPlayerHandlerService {
     final lastIndex = prefs.getInt('last_index') ?? 0;
     final lastPosSec = prefs.getInt('last_pos_sec') ?? 0;
     final playedToEnd = prefs.getBool('played_to_end') ?? false;
+    final shuffleEnabled = prefs.getBool('shuffle_enabled') ?? false;
+    final shuffleOrderRaw = prefs.getString('shuffle_order');
 
     if (playedToEnd) {
       await prefs.remove('last_index');
       await prefs.remove('last_pos_sec');
       await prefs.remove('last_queue_ids');
+      await prefs.remove('shuffle_enabled');
+      await prefs.remove('shuffle_order');
       await prefs.remove('played_to_end');
       return;
     }
 
     final safeIndex = lastIndex < savedQueue.length ? lastIndex : 0;
 
-    await setNewPlaylist(savedQueue, safeIndex);
+    List<int>? restoredOrder;
+    if (shuffleEnabled && shuffleOrderRaw != null) {
+      final parsed = shuffleOrderRaw.split(',').map(int.tryParse).whereType<int>().toList();
+      final expected = List.generate(savedQueue.length, (i) => i).toSet();
+      if (parsed.toSet().containsAll(expected) && parsed.length == savedQueue.length) {
+        restoredOrder = parsed;
+      }
+    }
+
+    await _rebuildQueuePreservingState(
+      rawItems: savedQueue,
+      shuffleEnabled: shuffleEnabled,
+      shuffleOrderIndices: restoredOrder,
+    );
+
     await player.seek(Duration(seconds: lastPosSec), index: safeIndex);
     await player.pause();
   }
 
+  /// Creates a [UriAudioSource] from a given [MediaItem], using the URL specified in the item's extras.
   UriAudioSource _makeAudioSource(MediaItem itm) =>
       AudioSource.uri(Uri.parse((itm.extras?["url"] as String)), tag: itm);
 
+  /// Creates a list of [UriAudioSource] objects from a list of [MediaItem]s by mapping each item to its corresponding audio source.
   List<UriAudioSource> _makeAudioSources(List<MediaItem> items) => items.map(_makeAudioSource).toList();
 
+  /// Retrieves the raw list of media items from the player's current sequence, without applying any shuffle order or modifications.
   List<MediaItem> _rawQueueItems() {
     return player.sequence.map((src) => src.tag as MediaItem).toList();
   }
 
+  /// Retrieves the current effective indices from the player, which represent the order of items in the visible queue (Q) after applying shuffle and any modifications.
   List<int> _effectiveRawIndices() {
     return List<int>.from(player.effectiveIndices);
   }
 
+  /// Emits a snapshot of the current sequence state to update the visible queue (Q) and the currently active media item (curr).
   void _emitSequenceSnapshot() {
     final state = player.sequenceState;
 
@@ -313,6 +376,10 @@ class AudioPlayerHandlerService {
     curr.value = state.currentSource?.tag as MediaItem?;
   }
 
+  /// Rebuilds the player's queue with a new list of raw media items and an optional shuffle order, while preserving the
+  /// current playback state (playing/paused, loop mode, current track and position).
+  /// This is used when modifying the queue while shuffle mode is enabled, to ensure that the current track continues playing without
+  /// interruption and that the shuffle order is maintained as much as possible.
   Future<void> _rebuildQueuePreservingState({
     required List<MediaItem> rawItems,
     required bool shuffleEnabled,
@@ -322,6 +389,11 @@ class AudioPlayerHandlerService {
     final loopMode = player.loopMode;
     final currentId = curr.value?.id;
     final currentPos = player.position;
+
+    // First we determine the initial raw index to set for the player after rebuilding the queue. We want to preserve the currently playing track if possible.
+    // If the current track's ID is still present in the new raw items, we use its index as the initial index. Otherwise, we default to 0 or null if the queue is empty.
+    // This ensures that if the currently playing track is still in the queue after modifications, it will continue playing without interruption.
+    // If it has been removed, we start from the beginning of the new queue.
 
     int? initialRawIndex;
     if (currentId != null) {
@@ -350,6 +422,7 @@ class AudioPlayerHandlerService {
     }
   }
 
+  /// Adds a single [MediaItem] to the end of the queue. If shuffle mode is disabled, it simply appends the new item to the player's audio sources.
   Future<void> addQueueItem(MediaItem item) async {
     if (!player.shuffleModeEnabled) {
       await player.addAudioSource(_makeAudioSource(item));
@@ -362,6 +435,7 @@ class AudioPlayerHandlerService {
     await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
   }
 
+  /// Adds a list of [MediaItem]s to the end of the queue. If shuffle mode is disabled, it simply appends the new items to the player's audio sources.
   Future<void> addQueueItems(List<MediaItem> items) async {
     if (items.isEmpty) return;
 
@@ -381,6 +455,8 @@ class AudioPlayerHandlerService {
     await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
   }
 
+  /// Inserts a single [MediaItem] at a specific effective index in the queue. If shuffle mode is disabled,
+  /// it inserts the new item directly at the specified index.
   Future<void> addQueueItemAt(MediaItem item, int effectiveIdx) async {
     final visibleLen = Q.value.length;
     final safeIdx = effectiveIdx.clamp(0, visibleLen);
@@ -397,6 +473,8 @@ class AudioPlayerHandlerService {
     await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
   }
 
+  /// Inserts a list of [MediaItem]s at a specific effective index in the queue. If shuffle mode is disabled,
+  /// it inserts the new items directly at the specified index.
   Future<void> addQueueItemsAt(List<MediaItem> items, int effectiveIdx) async {
     if (items.isEmpty) return;
 
@@ -422,6 +500,8 @@ class AudioPlayerHandlerService {
     await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
   }
 
+  /// Updates an existing [MediaItem] in the queue by matching its ID. If the item is found,
+  /// it replaces it with the new item and rebuilds the queue to reflect the change.
   Future<void> updateMediaItem(MediaItem item) async {
     final rawItems = _rawQueueItems();
     final rawIdx = rawItems.indexWhere((e) => e.id == item.id);
@@ -436,6 +516,8 @@ class AudioPlayerHandlerService {
     );
   }
 
+  /// Removes a media item from the queue at a specific effective index. If shuffle mode is disabled,
+  /// it removes the item directly at the specified index.
   Future<void> removeQueueItemAt(int effectiveIdx) async {
     if (effectiveIdx < 0 || effectiveIdx >= Q.value.length) return;
 
@@ -459,6 +541,8 @@ class AudioPlayerHandlerService {
     await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: nextOrder);
   }
 
+  /// Moves a media item in the queue from one effective index to another. If shuffle mode is disabled,
+  /// it moves the item directly from the source index to the destination index.
   Future<void> moveQueueItem(int fromEffectiveIdx, int toEffectiveIdx) async {
     if (fromEffectiveIdx < 0 || fromEffectiveIdx >= Q.value.length) return;
     if (toEffectiveIdx < 0 || toEffectiveIdx >= Q.value.length) return;
@@ -477,6 +561,8 @@ class AudioPlayerHandlerService {
     await _rebuildQueuePreservingState(rawItems: rawItems, shuffleEnabled: true, shuffleOrderIndices: order);
   }
 
+  /// Replaces the entire playlist with a new list of [MediaItem]s and starts playback from a specific effective index. If shuffle mode is disabled,
+  /// it sets the new audio sources directly with the specified initial index.
   Future<void> setNewPlaylist(List<MediaItem> items, int idx) async {
     await player.clearAudioSources();
     if (items.isNotEmpty) {
@@ -484,6 +570,7 @@ class AudioPlayerHandlerService {
     }
   }
 
+  /// Clears the entire playback queue and stops playback. This is used when the user wants to reset the player to an empty state.
   Future<void> clearQueue() async {
     await player.stop();
     await player.clearAudioSources();

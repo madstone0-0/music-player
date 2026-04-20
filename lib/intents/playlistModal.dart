@@ -1,3 +1,7 @@
+/// Defines the logic for the playlist addition modal, which allows users to add tracks, albums, or artists to their playlists.
+/// This includes resolving track IDs based on the intent and managing the state of the modal during playlist selection and creation.
+library;
+
 import 'dart:async';
 
 import 'package:get/get.dart';
@@ -8,36 +12,33 @@ import 'package:music_player/db/repo/playlist.dart';
 import 'package:music_player/db/repo/track.dart';
 import 'package:music_player/services/LocatorService.dart';
 
+/// Represents the type of addition being made to a playlist: a single track, an entire album, or all tracks by an artist.
 enum PlaylistAddKind { track, album, artist }
 
 class PlaylistAddIntent {
+  /// Creates a PlaylistAddIntent to add a single track to a playlist.
   PlaylistAddIntent.track(this.track)
-      : kind = PlaylistAddKind.track,
-        album = null,
-        artist = null,
-        grouping = null,
-        tracks = null,
-        trackCountHint = 1;
+    : kind = PlaylistAddKind.track,
+      album = null,
+      artist = null,
+      grouping = null,
+      tracks = null,
+      trackCountHint = 1;
 
-  PlaylistAddIntent.album({
-    required this.album,
-    this.artist,
-    this.tracks,
-    int? trackCount,
-  })  : kind = PlaylistAddKind.album,
-        grouping = null,
-        track = null,
-        trackCountHint = trackCount ?? tracks?.length;
+  /// Creates a PlaylistAddIntent to add all tracks from an album (optionally by a specific artist) to a playlist.
+  PlaylistAddIntent.album({required this.album, this.artist, this.tracks, int? trackCount})
+    : kind = PlaylistAddKind.album,
+      grouping = null,
+      track = null,
+      trackCountHint = trackCount ?? tracks?.length;
 
-  PlaylistAddIntent.artist({
-    required this.artist,
-    required this.grouping,
-    int? trackCount,
-  })  : kind = PlaylistAddKind.artist,
-        album = null,
-        track = null,
-        tracks = null,
-        trackCountHint = trackCount;
+  /// Creates a PlaylistAddIntent to add all tracks by an artist (optionally grouped by album) to a playlist.
+  PlaylistAddIntent.artist({required this.artist, required this.grouping, int? trackCount})
+    : kind = PlaylistAddKind.artist,
+      album = null,
+      track = null,
+      tracks = null,
+      trackCountHint = trackCount;
 
   final PlaylistAddKind kind;
   final TrackData? track;
@@ -69,6 +70,7 @@ class PlaylistAddIntent {
     }
   }
 
+  /// Resolves the track IDs associated with this intent, which can then be added to a playlist.
   Future<List<int>> resolveTrackIds(TrackRepository repo) async {
     switch (kind) {
       case PlaylistAddKind.track:
@@ -111,6 +113,11 @@ class PlaylistModalViewModel extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _fetch();
+  }
+
+  void _fetch() {
+    _playlistSub?.cancel();
     _playlistSub = playlistRepo.watchPlaylistsWithTrackCounts().listen((items) => playlists.assignAll(items));
   }
 
@@ -147,6 +154,7 @@ class PlaylistModalViewModel extends GetxController {
     }
   }
 
+  /// Adds the tracks associated with the intent to the specified playlist. Returns the number of tracks added.
   Future<int> addToPlaylist(int playlistId) async {
     processingId.value = playlistId;
     try {
@@ -165,6 +173,8 @@ class PlaylistModalViewModel extends GetxController {
     }
   }
 
+  /// Creates a new playlist with the given name and adds the tracks associated with the intent to it.
+  /// Returns the ID of the new playlist and the number of tracks added.
   Future<(int playlistId, int addedCount)> createAndAdd(String name) async {
     isCreating.value = true;
     try {

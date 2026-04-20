@@ -8,21 +8,38 @@ import 'package:music_player/services/PlayerStateService.dart';
 
 class MainPlayerViewModel extends GetxController {
   final currTag = Tag(pictures: []).obs;
-  final playerState = getIt<PlayerStateService>();
 
+  final _plySrv = getIt<PlayerStateService>();
+
+  /// Gets the first cover art picture from the current tag, if available.
   Picture? get coverArt => currTag.value.pictures.isNotEmpty ? currTag.value.pictures.first : null;
 
   @override
   void onInit() {
     super.onInit();
-    playerState.currentTrackNotifier.addListener(() {
-      final track = playerState.currentTrackNotifier.value;
-      if (track != null) {
-        _updateCurrentTag(track);
-      } else {
-        currTag.value = Tag(pictures: []);
-      }
-    });
+    _fetch();
+  }
+
+  @override
+  void onClose() {
+    _plySrv.currentTrackNotifier.removeListener(trackListener);
+    super.onClose();
+  }
+
+  /// Fetches the current track and sets up a listener to update the tag information whenever the track changes.
+  void _fetch() {
+    _plySrv.currentTrackNotifier.addListener(trackListener);
+  }
+
+  /// Listens for changes in the current track and updates the tag information accordingly.
+  void trackListener() {
+    final track = _plySrv.currentTrackNotifier.value;
+
+    if (track != null) {
+      _updateCurrentTag(track);
+    } else {
+      currTag.value = Tag(pictures: []);
+    }
   }
 
   Future<void> _updateCurrentTag(MediaItem track) async {

@@ -14,7 +14,7 @@ import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
 
 import '../common/nav.dart';
-import '../models/playlistModal.dart';
+import '../intents/playlistModal.dart';
 
 class ArtistAlbums extends StatefulWidget {
   const ArtistAlbums({super.key, required this.artistName, this.grouping = ArtistGrouping.artist});
@@ -29,8 +29,8 @@ class ArtistAlbums extends StatefulWidget {
 class _ArtistAlbumsState extends State<ArtistAlbums> {
   late final ArtistAlbumsViewModel vm;
   final queueActions = QueueActionHandler();
-  final trackRepo = getIt<TrackRepository>();
-  final music = getIt<MusicService>();
+  final _trackRepo = getIt<TrackRepository>();
+  final _mscSrv = getIt<MusicService>();
 
   @override
   void initState() {
@@ -50,9 +50,9 @@ class _ArtistAlbumsState extends State<ArtistAlbums> {
 
     switch (v) {
       case 0:
-        final tracks = await intent.resolveTracks(trackRepo);
+        final tracks = await intent.resolveTracks(_trackRepo);
         if (tracks.isNotEmpty) {
-          await music.playAll(tracks);
+          await _mscSrv.playAll(tracks);
         }
         break;
       case 1:

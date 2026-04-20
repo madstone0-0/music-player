@@ -1,9 +1,15 @@
+/// This service scans the local file system for media files (primarily audio) and provides metadata about them.
+/// It uses the `path_provider` package to find common directories and the `compute` function to perform the
+/// scanning in a background isolate, ensuring the UI remains responsive.
+library;
+
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+/// Set of supported audio file extensions
 const Set<String> AUDIO_EXTENSIONS = {'.mp3', '.m4a', '.aac', '.wav', '.flac'};
 
 String extOf(String path) {
@@ -13,6 +19,7 @@ String extOf(String path) {
   return name.substring(dot);
 }
 
+/// Scans the specified directory for media files matching the supported extensions.
 Future<List<LocalMediaFile>> _scanDirectoryTask(Map<String, dynamic> args) async {
   final String baseDirectory = args['baseDirectory'];
   final bool recursive = args['recursive'];
@@ -34,14 +41,7 @@ Future<List<LocalMediaFile>> _scanDirectoryTask(Map<String, dynamic> args) async
     try {
       final stat = await entity.stat();
 
-      results.add(
-        LocalMediaFile(
-          path: path,
-          name: p.basename(path),
-          sizeBytes: stat.size,
-          modifiedAt: stat.modified,
-        ),
-      );
+      results.add(LocalMediaFile(path: path, name: p.basename(path), sizeBytes: stat.size, modifiedAt: stat.modified));
     } catch (_) {
       // Skip unreadable files
     }
@@ -50,6 +50,7 @@ Future<List<LocalMediaFile>> _scanDirectoryTask(Map<String, dynamic> args) async
   return results;
 }
 
+/// Represents a media file found on the local file system, containing its path, name, size, and modification date.
 class LocalMediaFile {
   final String path;
   final String name;
@@ -68,6 +69,7 @@ class LocalMediaService {
   final bool recursive;
   final Set<String> supportedExtensions;
 
+  /// Factory method to create an instance of LocalMediaService. It resolves the base directory for scanning, which can be provided or automatically determined.
   static Future<LocalMediaService> create({
     String? musicDirectory,
     bool recursive = true,
@@ -82,6 +84,7 @@ class LocalMediaService {
     );
   }
 
+  /// Attempts to find a suitable music directory on the device. It checks common locations and falls back to application-specific directories if necessary.
   static Future<String> _findMusicDir() async {
     final musicDir = Directory('/storage/emulated/0/Music');
     if (await musicDir.exists()) {
@@ -97,6 +100,8 @@ class LocalMediaService {
     return Directory('${docs.path}/Music').path;
   }
 
+  /// Scans the base directory for media files matching the supported extensions.
+  /// This operation is performed in a background isolate to avoid blocking the UI.
   Future<List<LocalMediaFile>> scanAudioFiles() async {
     return await compute(_scanDirectoryTask, {
       'baseDirectory': baseDirectory,
@@ -105,10 +110,12 @@ class LocalMediaService {
     });
   }
 
+  /// Checks if the base directory is accessible and exists. This can be used to verify permissions and availability before attempting to scan.
   Future<bool> canAccessBaseDirectory() async {
     return Directory(baseDirectory).exists();
   }
 
+  /// Utility method to extract the file name from a given path. It splits the path by the platform's path separator and returns the last segment.
   static String fileNameOf(String path) {
     return path.split(Platform.pathSeparator).last;
   }

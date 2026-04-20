@@ -62,7 +62,7 @@ class _Avatar extends StatelessWidget {
         style: TextStyle(
           color: scheme.onSecondaryContainer,
           fontWeight: FontWeight.w600,
-          fontSize: radius * 0.5, // Scale text to fit the dynamic radius
+          fontSize: radius * 0.5
         ),
       ),
     );

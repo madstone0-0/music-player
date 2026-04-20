@@ -14,9 +14,10 @@ import 'package:music_player/screens/widgets/miniPlayer.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
+import 'package:music_player/utils/utils.dart';
 
 import '../db/db.dart';
-import '../models/playlistModal.dart';
+import '../intents/playlistModal.dart';
 
 class AlbumTracks extends StatefulWidget {
   const AlbumTracks({super.key, this.grouping = ArtistGrouping.artist});
@@ -32,17 +33,13 @@ class _AlbumTracksState extends State<AlbumTracks> {
     AlbumTracksViewModel(),
     tag: "${Get.arguments["album"] ?? ""}_${Get.arguments["artist"] ?? ""}",
   );
-  final player = getIt<MusicService>();
+  final _mscSrv = getIt<MusicService>();
   final queueActions = QueueActionHandler();
-
-  void _showInfo(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-  }
 
   Future<void> _editTags(TrackData track) async {
     final edited = await EditTags.open(context, track);
     if (!mounted || edited == null) return;
-    _showInfo('Tags updated');
+    showInfo(context, 'Tags updated');
   }
 
   void _handleMenuSelection(int v, TrackData track) async {
@@ -101,8 +98,6 @@ class _AlbumTracksState extends State<AlbumTracks> {
                   stretch: true,
                   backgroundColor: scheme.surface,
                   flexibleSpace: FlexibleSpaceBar(
-                    // Left padding accounts for the pinned leading back button
-                    // (~56 dp) so the title never overlaps it when collapsed.
                     titlePadding: const EdgeInsets.fromLTRB(56, 0, 16, 14),
                     title: Text(
                       vm.albumName ?? "Unknown Album",
@@ -115,12 +110,12 @@ class _AlbumTracksState extends State<AlbumTracks> {
                   actions: [
                     IconButton(
                       icon: const Icon(Icons.play_arrow_rounded),
-                      onPressed: () => player.playAll(vm.tracks),
+                      onPressed: () => _mscSrv.playAll(vm.tracks),
                       tooltip: "Play",
                     ),
                     IconButton(
                       icon: const Icon(Icons.shuffle_rounded),
-                      onPressed: () => player.playAll(vm.tracks, shuffle: true),
+                      onPressed: () => _mscSrv.playAll(vm.tracks, shuffle: true),
                       tooltip: "Shuffle",
                     ),
                     IconButton(
@@ -143,7 +138,7 @@ class _AlbumTracksState extends State<AlbumTracks> {
                       final track = vm.tracks[index];
                       return AlbumTrackRow(
                         track: track.toMediaItem(),
-                        onPressed: () => player.playAll(vm.tracks, index: index),
+                        onPressed: () => _mscSrv.playAll(vm.tracks, index: index),
                         onLongPress: () => showModalBottomSheet(
                           context: context,
                           builder: (context) => PopupMenu(

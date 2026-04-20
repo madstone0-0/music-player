@@ -15,7 +15,8 @@ import 'package:music_player/screens/widgets/trackRow.dart';
 import 'package:music_player/screens/widgets/azList.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
-import '../models/playlistModal.dart';
+import 'package:music_player/utils/utils.dart';
+import '../intents/playlistModal.dart';
 
 class Tracks extends StatefulWidget {
   const Tracks({super.key});
@@ -25,7 +26,7 @@ class Tracks extends StatefulWidget {
 }
 
 class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
-  final player = getIt<MusicService>();
+  final _mscSrv = getIt<MusicService>();
   final queueActions = QueueActionHandler();
   late final TracksViewModel vm;
 
@@ -35,7 +36,7 @@ class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
   Future<void> _editTags(TrackData track) async {
     final edited = await EditTags.open(context, track);
     if (!mounted || edited == null) return;
-    _showInfo('Tags updated');
+    showInfo(context, 'Tags updated');
   }
 
   void _handleMenuSelection(int v, TrackData track) async {
@@ -66,18 +67,14 @@ class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
   void _openAlbum(TrackData track) {
     final ok = TrackNavigation.openAlbum(context: context, album: track.album, artist: track.artist);
 
-    if (!ok) _showInfo('Album details not available for this track.');
+    if (!ok) showInfo(context, 'Album details not available for this track.');
   }
 
   void _openArtist(TrackData track) {
     final target = TrackNavigation.resolveArtistTarget(track.toMediaItem());
     final ok = TrackNavigation.openArtist(context: context, artist: target.$1, grouping: target.$2);
 
-    if (!ok) _showInfo('Artist details not available for this track.');
-  }
-
-  void _showInfo(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (!ok) showInfo(context, 'Artist details not available for this track.');
   }
 
   @override
@@ -115,7 +112,7 @@ class _TracksState extends State<Tracks> with AutomaticKeepAliveClientMixin {
                   padding: AZList.itemPadding,
                   child: TrackRow(
                     track: item.track.toMediaItem(),
-                    onPressed: () => player.playAll(vm.all.value, index: index),
+                    onPressed: () => _mscSrv.playAll(vm.all.value, index: index),
                     // On long press show a popup menu with options to add to queue, add to playlist, view album, view artist
                     onLongPress: () => showModalBottomSheet(
                       context: context,

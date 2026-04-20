@@ -5,6 +5,7 @@ import '../tables/track.dart';
 
 part "track.g.dart";
 
+/// Sort modes for tracks.
 enum TrackSortMode {
   titleAsc,
   titleDesc,
@@ -20,8 +21,10 @@ enum TrackSortMode {
   yearDesc,
 }
 
+/// Grouping options for artists.
 enum ArtistGrouping { artist, albumArtist }
 
+/// Snapshot of a track's scan status, used for determining if a track needs to be re-scanned.
 class TrackScanSnapshot {
   final String path;
   final DateTime? lastModified;
@@ -30,6 +33,7 @@ class TrackScanSnapshot {
   TrackScanSnapshot({required this.path, required this.lastModified, required this.isIndexed});
 }
 
+/// Represents a search result row for albums, containing the album's track data and the count of tracks in that album.
 class AlbumSearchRow {
   final TrackData album;
   final int? trackCount;
@@ -70,17 +74,23 @@ OrderingTerm _order(dynamic t, TrackSortMode mode) {
 class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
   TrackDao(super.attachedDatabase);
 
+  /// Search pattern helper that escapes special characters and wraps the query with wildcards for SQL LIKE operations.
   String _searchPattern(String query) => '%${query.replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
 
+  /// Helper method to filter only active (indexed) tracks.
   Expression<bool> _isActive(Track t) => t.isIndexed.equals(true);
 
+  /// Retrieves all active tracks from the database.
   Future<List<TrackData>> getAllTracks() => (select(track)..where((t) => _isActive(t))).get();
 
+  /// Retrieves a single track by its ID, ensuring it is active (indexed).
   Future<TrackData> getTrackById(int id) => (select(track)..where((t) => t.id.equals(id) & _isActive(t))).getSingle();
 
+  /// Retrieves multiple tracks by their IDs, ensuring they are active (indexed).
   Future<List<TrackData>> getTracksByIds(List<int> ids) =>
       (select(track)..where((t) => t.id.isIn(ids) & _isActive(t))).get();
 
+  /// Retrieves a snapshot of all tracks' scan statuses, including their file paths, last modified timestamps, and whether they are indexed.
   Future<List<TrackScanSnapshot>> getTrackScanSnapshots() async {
     final query = selectOnly(track)..addColumns([track.path, track.lastModified, track.isIndexed]);
     final rows = await query.get();
@@ -96,10 +106,13 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
         .toList();
   }
 
+  /// Retrieves a single track by its file path, ensuring it is active (indexed). Returns null if no such track exists.
   Future<TrackData?> getTrackByPath(String filePath) {
     return (select(track)..where((t) => t.path.equals(filePath) & _isActive(t))).getSingleOrNull();
   }
 
+  /// Watches all active tracks in the database, emitting updates whenever the underlying data changes.
+  /// The results can be sorted based on the provided [TrackSortMode].
   Stream<List<TrackData>> watchAllTracks({TrackSortMode mode = TrackSortMode.titleAsc}) {
     return (select(track)
           ..where((t) => _isActive(t))
@@ -107,6 +120,7 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
         .watch();
   }
 
+  /// Watches tracks grouped by album, emitting a list of maps where each map contains the album's track data and the count of tracks in that album.
   Stream<List<Map<String, dynamic>>> watchGroupedAlbums({TrackSortMode mode = TrackSortMode.albumAsc}) {
     final trackCount = track.id.count();
 
@@ -124,6 +138,7 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
     });
   }
 
+  /// Watches tracks grouped by artist, emitting a list of maps where each map contains the artist's track data and the count of tracks for that artist.
   Stream<List<Map<String, dynamic>>> watchGroupedArtists({TrackSortMode mode = TrackSortMode.artistAsc}) {
     final trackCount = track.id.count();
 
@@ -141,6 +156,8 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
     });
   }
 
+  /// Watches tracks grouped by album artist, emitting a list of maps where each map contains the album artist's
+  /// track data and the count of tracks for that album artist.
   Stream<List<Map<String, dynamic>>> watchGroupedAlbumArtists({TrackSortMode mode = TrackSortMode.artistAsc}) {
     final trackCount = track.id.count();
 
@@ -158,6 +175,8 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
     });
   }
 
+  /// Watches tracks by a specific artist, emitting updates whenever the underlying data changes.
+  /// The results are sorted by album in ascending order.
   Stream<List<TrackData>> watchTracksByArtist(String name) {
     return (select(track)
           ..where((t) => t.artist.equals(name) & _isActive(t))
@@ -165,6 +184,7 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
         .watch();
   }
 
+  /// Watches tracks by a specific album artist, emitting updates whenever the underlying data changes.
   Stream<List<TrackData>> watchTracksByAlbumArtist(String name) {
     return (select(track)
           ..where((t) => t.albumArtist.equals(name) & _isActive(t))
@@ -172,6 +192,8 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
         .watch();
   }
 
+  /// Watches albums by a specific artist or album artist, emitting a list of maps where each map contains
+  /// the album's track data and the count of tracks in that album.
   Stream<List<Map<String, dynamic>>> watchAlbumsByArtist(
     String name, {
     ArtistGrouping grouping = ArtistGrouping.artist,
@@ -196,16 +218,21 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
     });
   }
 
+  /// Inserts a new track into the database. Returns the ID of the inserted track.
   Future<int> insertTrack(TrackCompanion entry) {
     return into(track).insert(entry);
   }
 
+  /// Inserts multiple tracks into the database in a single batch operation.
   Future<void> insertManyTracks(List<TrackCompanion> entries) {
     return batch((batch) {
       batch.insertAll(track, entries);
     });
   }
 
+  /// Inserts or updates a track based on its file path.
+  /// If a track with the same path already exists, it will be updated with the new values;
+  /// otherwise, a new track will be inserted. Returns the ID of the inserted or updated track.
   Future<int> upsertTrack(TrackCompanion entry) {
     return into(track).insert(
       entry,
@@ -228,6 +255,7 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
     );
   }
 
+  /// Inserts or updates multiple tracks based on their file paths in a single batch operation.
   Future<void> upsertTracks(List<TrackCompanion> entries) async {
     if (entries.isEmpty) return;
 
@@ -257,46 +285,57 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
     });
   }
 
+  /// Marks tracks as unindexed based on their file paths. Returns the number of tracks that were updated.
   Future<int> markTracksUnindexedByPaths(List<String> paths) {
     if (paths.isEmpty) return Future.value(0);
 
     return (update(track)..where((t) => t.path.isIn(paths))).write(const TrackCompanion(isIndexed: Value(false)));
   }
 
+  /// Marks a single track as unindexed based on its file path. Returns the number of tracks that were updated (0 or 1).
   Future<int> markTrackUnindexedByPath(String filePath) {
     return (update(track)..where((t) => t.path.equals(filePath))).write(const TrackCompanion(isIndexed: Value(false)));
   }
 
+  /// Restores tracks as indexed based on their file paths. Returns the number of tracks that were updated.
   Future<int> restoreTrackByPath(String filePath) {
     return (update(track)..where((t) => t.path.equals(filePath))).write(const TrackCompanion(isIndexed: Value(true)));
   }
 
+  /// Restores multiple tracks as indexed based on their file paths. Returns the number of tracks that were updated.
   Future<int> restoreTracksByPaths(List<String> paths) {
     if (paths.isEmpty) return Future.value(0);
 
     return (update(track)..where((t) => t.path.isIn(paths))).write(const TrackCompanion(isIndexed: Value(true)));
   }
 
+  /// Retrieves all tracks that are marked as unindexed, meaning they are not currently considered active in the library.
   Future<List<TrackData>> getUnindexedTracks() {
     return (select(track)..where((t) => t.isIndexed.equals(false))).get();
   }
 
+  /// Watches all tracks that are marked as unindexed, emitting updates whenever the underlying data changes.
+  /// This can be used to monitor tracks that have been removed from the library but not yet permanently deleted.
   Stream<List<TrackData>> watchUnindexedTracks() {
     return (select(track)..where((t) => t.isIndexed.equals(false))).watch();
   }
 
+  /// Permanently deletes tracks from the database based on their file paths. Returns the number of tracks that were deleted.
   Future<int> permanentlyDeleteTrackByPath(String filePath) {
     return (delete(track)..where((t) => t.path.equals(filePath))).go();
   }
 
+  /// Permanently deletes multiple tracks from the database based on their file paths. Returns the number of tracks that were deleted.
   Future<int> permanentlyDeleteUnindexedTracks() {
     return (delete(track)..where((t) => t.isIndexed.equals(false))).go();
   }
 
+  /// Permanently deletes all tracks from the database.
   Future<int> deleteAllTracks() {
     return delete(track).go();
   }
 
+  /// Refreshes the entire track library by deleting all existing tracks and inserting a new list of tracks in a single transaction.
   Future<void> refreshAllTracks(List<TrackCompanion> tracks) async {
     return transaction(() async {
       await deleteAllTracks();
@@ -304,6 +343,7 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
     });
   }
 
+  /// Updates the metadata of a track based on its ID. Returns the number of tracks that were updated (0 or 1).
   Future<int> updateTrackMetadata({
     required int id,
     required String title,
@@ -329,6 +369,8 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
     );
   }
 
+  /// Searches for tracks that match the given query in their title, artist, album, or album artist fields.
+  /// The search is case-insensitive and supports partial matches. Returns a list of matching tracks, limited to the specified number of results.
   Future<List<TrackData>> searchTracks(String query, {int limit = 30}) {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return Future.value([]);
@@ -372,6 +414,7 @@ class TrackDao extends DatabaseAccessor<Db> with _$TrackDaoMixin {
         .toList();
   }
 
+  /// Searches for artists that match the given query in their artist or album artist fields, depending on the specified grouping.
   Future<List<Map<String, dynamic>>> searchArtists(
     String query, {
     ArtistGrouping grouping = ArtistGrouping.artist,

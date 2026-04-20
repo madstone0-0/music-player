@@ -10,7 +10,7 @@ import 'package:music_player/screens/widgets/artistItem.dart';
 import 'package:music_player/screens/widgets/azList.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/sort.dart';
-import '../models/playlistModal.dart';
+import '../intents/playlistModal.dart';
 
 class Artists extends StatefulWidget {
   const Artists({super.key, this.grouping = ArtistGrouping.artist});
@@ -105,7 +105,6 @@ class _ArtistsState extends State<Artists> with AutomaticKeepAliveClientMixin {
                       isGrid: vm.isGrid.value,
                       onTap: () => Get.to(
                         () => ArtistAlbums(artistName: item.artist.name, grouping: widget.grouping),
-                        // id: NESTED_NAV_ID,
                         transition: Transition.rightToLeftWithFade,
                       ),
                       onLongPress: () => showModalBottomSheet(

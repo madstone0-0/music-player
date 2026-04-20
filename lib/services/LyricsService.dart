@@ -1,9 +1,13 @@
+/// This service handles fetching lyrics for tracks, both from local storage and from an external API.
+library;
+
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/services/ApiService.dart';
 
+/// Represents the lyrics of a track, including whether they are synced (contain timestamps) or not.
 class Lyrics {
   final String content;
   late final bool isSynced;
@@ -18,6 +22,7 @@ class LyricsService {
 
   LyricsService({required this.api});
 
+  /// Fetch lyrics from the API using track information
   Future<Lyrics?> fetchLyricsAPI(TrackData track) async {
     try {
       final res = await api.getLyrics(
@@ -26,10 +31,10 @@ class LyricsService {
         albumName: track.album ?? "",
         duration: (track.duration ?? 0).toDouble(),
       );
-      if (res.plainLyrics != null && res.plainLyrics!.trim().isNotEmpty) {
-        return Lyrics(content: res.plainLyrics!);
-      } else if (res.syncedLyrics != null && res.syncedLyrics!.trim().isNotEmpty) {
+      if (res.syncedLyrics != null && res.syncedLyrics!.trim().isNotEmpty) {
         return Lyrics(content: res.syncedLyrics!);
+      } else if (res.plainLyrics != null && res.plainLyrics!.trim().isNotEmpty) {
+        return Lyrics(content: res.plainLyrics!);
       }
     } catch (e) {
       debugPrint("Error fetching lyrics from API: $e");
@@ -38,6 +43,7 @@ class LyricsService {
     return null;
   }
 
+  /// Fetch lyrics from local storage. It looks for a .lrc file with the same name as the track.
   Future<String?> fetchLyricsLocal(TrackData track) async {
     // Local lyrics should be stored at the same path as the track with .lrc extension
     final lyricsPath = track.path.replaceAll(RegExp(r'\.\w+$'), '.lrc');
@@ -54,6 +60,7 @@ class LyricsService {
     return null;
   }
 
+  /// Get lyrics for a track, first trying local storage and then falling back to the API if not found locally.
   Future<Lyrics?> getLyrics(TrackData track) async {
     // First try local lyrics, if not found then fetch from API
     final localLyrics = await fetchLyricsLocal(track);
@@ -69,8 +76,9 @@ class LyricsService {
     return null;
   }
 
+  /// Determines if the lyrics are synced by checking for the presence of timestamps in the lyrics content.
   static bool areLyricsSynced(String lyrics) {
-    // If the lyrics contain timestamps like , we consider them synced
+    // If the lyrics contain timestamps, we consider them synced
     final timestampRegex = RegExp(r'\[\d{1,2}:\d{2}(?:\.\d{1,3})?\]');
     return timestampRegex.hasMatch(lyrics);
   }

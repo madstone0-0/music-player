@@ -1,3 +1,7 @@
+/// This file is responsible for setting up the service locator using the GetIt package.
+/// It registers various services and repositories that can be accessed throughout the app using GetIt.
+library;
+
 import 'package:get_it/get_it.dart';
 import 'package:music_player/db/db.dart';
 import 'package:music_player/db/repo/history.dart';
@@ -9,7 +13,6 @@ import 'package:music_player/services/LocalMediaService.dart';
 import 'package:music_player/services/LyricsService.dart';
 import 'package:music_player/services/MusicService.dart';
 import 'package:music_player/services/PlayerStateService.dart';
-import 'package:music_player/services/PlaylistService.dart';
 import 'package:music_player/services/SearchService.dart';
 import 'package:dio/dio.dart';
 
@@ -21,7 +24,6 @@ Future<void> setupLocatorService() async {
   getIt.registerSingleton<TrackRepository>(TrackRepository(getIt<Db>(), getIt<LocalMediaService>()));
   getIt.registerSingleton<PlaylistRepository>(PlaylistRepository(getIt<Db>()));
   getIt.registerSingleton<HistoryRepository>(HistoryRepository(getIt<Db>()));
-  getIt.registerLazySingleton<PlaylistService>(() => PlaylistService(repo: getIt<PlaylistRepository>()));
   getIt.registerSingleton<AudioPlayerHandlerService>(AudioPlayerHandlerService());
   getIt.registerLazySingleton<MusicService>(() => MusicService());
   getIt.registerLazySingleton<PlayerStateService>(() => PlayerStateService());
@@ -32,4 +34,13 @@ Future<void> setupLocatorService() async {
   getIt.registerSingleton<ApiService>(api);
 
   getIt.registerLazySingleton(() => LyricsService(api: getIt<ApiService>()));
+}
+
+void disposeLocatorService() {
+  if (getIt.isRegistered<AudioPlayerHandlerService>()) {
+    getIt<AudioPlayerHandlerService>().dispose();
+  }
+  if (getIt.isRegistered<PlayerStateService>()) {
+    getIt<PlayerStateService>().dispose();
+  }
 }

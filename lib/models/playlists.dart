@@ -17,10 +17,11 @@ class PlaylistViewModel extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _bind();
+    _fetch();
   }
 
-  void _bind() {
+  /// Fetch playlists with track counts based on the current sort mode.
+  void _fetch() {
     _sub?.cancel();
     isLoading.value = true;
 
@@ -30,6 +31,7 @@ class PlaylistViewModel extends GetxController {
     });
   }
 
+  /// Toggle sorting based on the provided label and refresh the playlist list.
   void toggleSort(String label) {
     if (label == "Name") {
       sortMode.value = (sortMode.value == PlaylistSortMode.nameAsc)
@@ -44,19 +46,22 @@ class PlaylistViewModel extends GetxController {
           ? PlaylistSortMode.updatedAtDesc
           : PlaylistSortMode.updatedAtAsc;
     }
-    _bind();
+    _fetch();
   }
 
+  /// Create a new playlist with the given name if it's not empty.
   Future<void> createPlaylist(String name) async {
     if (name.trim().isEmpty) return;
     await _repo.createPlaylist(name.trim());
   }
 
+  /// Rename an existing playlist by its ID if the new name is not empty.
   Future<void> renamePlaylist(int id, String newName) async {
     if (newName.trim().isEmpty) return;
     await _repo.renamePlaylist(id, newName.trim());
   }
 
+  /// Delete a playlist by its ID.
   Future<void> deletePlaylist(int id) async {
     await _repo.deletePlaylist(id);
   }

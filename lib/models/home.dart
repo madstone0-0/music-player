@@ -8,6 +8,7 @@ import 'package:music_player/db/repo/history.dart';
 import 'package:music_player/db/repo/playlist.dart';
 import 'package:music_player/services/LocatorService.dart';
 
+/// Combines a playlist with its last played time and track count for display on the home screen.
 class HomePlaylistItem {
   HomePlaylistItem({required this.playlist, required this.lastPlayed, required this.trackCount});
 
@@ -41,6 +42,10 @@ class HomeViewModel extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _fetch();
+  }
+
+  void _fetch() {
     _bindMostPlayed();
     _bindRecentTracks();
     _bindPlaylistActivity();
@@ -81,6 +86,7 @@ class HomeViewModel extends GetxController {
     });
   }
 
+  /// Rebuilds the list of recent playlist items by combining the recent playlist activity with the track counts.
   void _rebuildPlaylistItems() {
     if (isClosed) return;
     if (_playlistActivity.isEmpty) {

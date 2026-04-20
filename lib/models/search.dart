@@ -6,6 +6,7 @@ import 'package:music_player/models/search.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/SearchService.dart';
 
+/// Represents a search result for an album, including the album data and the number of tracks it contains.
 class AlbumSearchResult {
   const AlbumSearchResult({required this.album, required this.trackCount});
 
@@ -13,6 +14,7 @@ class AlbumSearchResult {
   final int? trackCount;
 }
 
+/// Represents a search result for an artist, including the artist data and the grouping it belongs to.
 class ArtistSearchResult {
   const ArtistSearchResult({required this.artist, required this.grouping});
 
@@ -20,6 +22,7 @@ class ArtistSearchResult {
   final ArtistGrouping grouping;
 }
 
+/// Represents the combined search results for tracks, albums, and artists.
 class SearchResults {
   const SearchResults({required this.tracks, required this.albums, required this.artists});
 
@@ -34,7 +37,7 @@ class SearchResults {
 
 class SearchViewModel extends GetxController {
 
-  final SearchService searchService = getIt<SearchService>();
+  final SearchService _srhSrv = getIt<SearchService>();
 
   final results = SearchResults.empty.obs;
   final isLoading = false.obs;
@@ -42,6 +45,7 @@ class SearchViewModel extends GetxController {
 
   int _requestId = 0;
 
+  /// Executes a search query and updates the search results, loading state, and error state accordingly.
   Future<void> run(String query) async {
     final trimmed = query.trim();
     final requestId = ++_requestId;
@@ -57,7 +61,7 @@ class SearchViewModel extends GetxController {
     error.value = null;
 
     try {
-      final next = await searchService.search(trimmed);
+      final next = await _srhSrv.search(trimmed);
       if (_requestId == requestId) {
         results.value = next;
       }

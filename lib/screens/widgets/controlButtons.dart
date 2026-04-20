@@ -15,7 +15,7 @@ class PrimaryControls extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Previous.
+        // Previous
         ValueListenableBuilder<bool>(
           valueListenable: page.isFirstTrackNotifier,
           builder: (context, isFirst, _) => IconButton(
@@ -28,7 +28,7 @@ class PrimaryControls extends StatelessWidget {
 
         const SizedBox(width: 8),
 
-        // Play / Pause — M3 FilledButton gives the branded filled circle.
+        // Play / Pause
         ValueListenableBuilder<ButtonState>(
           valueListenable: page.playButtonNotifier,
           builder: (context, state, _) {
@@ -58,7 +58,7 @@ class PrimaryControls extends StatelessWidget {
 
         const SizedBox(width: 8),
 
-        // Next.
+        // Next
         ValueListenableBuilder<bool>(
           valueListenable: page.isLastTrackNotifier,
           builder: (context, isLast, _) => IconButton(
@@ -85,7 +85,7 @@ class SecondaryControls extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        // Shuffle — FilledTonal when active, standard when inactive.
+        // Shuffle
         ValueListenableBuilder<bool>(
           valueListenable: page.isShuffleEnabledNotifier,
           builder: (context, enabled, _) => _SecondaryButton(
@@ -96,7 +96,7 @@ class SecondaryControls extends StatelessWidget {
           ),
         ),
 
-        // Repeat — cycles off → all → one.
+        // Repeat
         ValueListenableBuilder<RepeatState>(
           valueListenable: page.repeatButtonNotifier,
           builder: (context, state, _) => _SecondaryButton(
@@ -107,7 +107,7 @@ class SecondaryControls extends StatelessWidget {
           ),
         ),
 
-        // Queue.
+        // Queue
         _SecondaryButton(
           icon: Icons.queue_music_rounded,
           label: 'Queue',
@@ -137,7 +137,6 @@ class _SecondaryButton extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // FilledTonal for active state, plain icon otherwise.
           active
               ? FilledButton.tonal(
                   onPressed: onTap,

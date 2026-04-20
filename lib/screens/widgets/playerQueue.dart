@@ -2,18 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_player/db/tables/trackMapper.dart';
-import 'package:music_player/models/mainTab.dart';
-import 'package:music_player/models/playlistModal.dart';
+import 'package:music_player/intents/playlistModal.dart';
 import 'package:music_player/intents/queueIntent.dart';
-import 'package:music_player/screens/library.dart';
-import 'package:music_player/screens/mainTab.dart';
 import 'package:music_player/screens/widgets/playlistModal.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
 import 'package:music_player/services/PlayerStateService.dart';
-import 'package:music_player/screens/widgets/trackCoverArt.dart';
-import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:music_player/utils/utils.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:music_player/intents/trackNavigation.dart';
 
@@ -92,12 +88,10 @@ class _PlayerQueueState extends State<PlayerQueue> {
                   ),
                   const SizedBox(width: 8),
                   Text('(${Q.length})', style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
-                  // Clear queue button to the right
                   const Spacer(),
                   IconButton(
                     onPressed: () {
                       player.clearQueue();
-                      // Close the queue view after clearing
                       Get.back();
                     },
                     icon: const Icon(Icons.clear_all_rounded),
@@ -152,10 +146,7 @@ class _PlayerQueueState extends State<PlayerQueue> {
                                 player.removeFromQueue(idx);
                                 break;
                               case 2:
-                                PlaylistModal.open(
-                                  context,
-                                  PlaylistAddIntent.track(Q[idx].toTrackData()),
-                                );
+                                PlaylistModal.open(context, PlaylistAddIntent.track(Q[idx].toTrackData()));
                                 break;
                               case 3:
                                 _openAlbum(context, Q[idx]);
@@ -204,27 +195,15 @@ class _PlayerQueueState extends State<PlayerQueue> {
   }
 
   void _openAlbum(BuildContext context, MediaItem track) {
-    final ok = TrackNavigation.openAlbum(
-      context: context,
-      album: track.album,
-      artist: track.artist,
-    );
+    final ok = TrackNavigation.openAlbum(context: context, album: track.album, artist: track.artist);
 
-    if (!ok) _showInfo(context, 'Album details not available for this track.');
+    if (!ok) showInfo(context, 'Album details not available for this track.');
   }
 
   void _openArtist(BuildContext context, MediaItem track) {
     final target = TrackNavigation.resolveArtistTarget(track);
-    final ok = TrackNavigation.openArtist(
-      context: context,
-      artist: target.$1,
-      grouping: target.$2,
-    );
+    final ok = TrackNavigation.openArtist(context: context, artist: target.$1, grouping: target.$2);
 
-    if (!ok) _showInfo(context, 'Artist details not available for this track.');
-  }
-
-  void _showInfo(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (!ok) showInfo(context, 'Artist details not available for this track.');
   }
 }

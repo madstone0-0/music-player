@@ -9,6 +9,7 @@ import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/MusicService.dart';
 import 'package:music_player/services/PlayerStateService.dart';
 
+/// Represents the fetching status of lyrics for a track.
 enum LyricsStatus { loading, ready, empty }
 
 class LyricsViewModel extends GetxController {
@@ -16,10 +17,10 @@ class LyricsViewModel extends GetxController {
     track.value = initialTrack;
   }
 
-  final _lyricsService = getIt<LyricsService>();
-  final _playerState = getIt<PlayerStateService>();
+  final _lyrSrv = getIt<LyricsService>();
+  final _plySrv = getIt<PlayerStateService>();
 
-  final LyricController con = LyricController();
+  final LyricController lyrCon = LyricController();
 
   final Rxn<MediaItem> track = Rxn<MediaItem>();
   final Rxn<Lyrics> lyrics = Rxn<Lyrics>();
@@ -30,25 +31,26 @@ class LyricsViewModel extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    con.setOnTapLineCallback(_seekTo);
-    _playerState.currentTrackNotifier.addListener(_handleTrackChange);
-    _playerState.progressNotifier.addListener(_handleProgress);
+    lyrCon.setOnTapLineCallback(_seekTo);
+    _plySrv.currentTrackNotifier.addListener(_handleTrackChange);
+    _plySrv.progressNotifier.addListener(_handleProgress);
     _loadLyricsFor(track.value);
   }
 
   @override
   void onClose() {
-    con.cancelOnTapLineCallback();
-    _playerState.currentTrackNotifier.removeListener(_handleTrackChange);
-    _playerState.progressNotifier.removeListener(_handleProgress);
-    con.dispose();
+    lyrCon.cancelOnTapLineCallback();
+    _plySrv.currentTrackNotifier.removeListener(_handleTrackChange);
+    _plySrv.progressNotifier.removeListener(_handleProgress);
+    lyrCon.dispose();
     super.onClose();
   }
 
+  /// Manually refreshes the lyrics for the current track.
   Future<void> refresh() => _loadLyricsFor(track.value);
 
   void _handleTrackChange() {
-    final next = _playerState.currentTrackNotifier.value;
+    final next = _plySrv.currentTrackNotifier.value;
     if (next == null || track.value?.id == next.id) return;
     track.value = next;
     _loadLyricsFor(next);
@@ -56,23 +58,26 @@ class LyricsViewModel extends GetxController {
 
   void _handleProgress() {
     if (!(lyrics.value?.isSynced ?? false)) return;
-    con.setProgress(_playerState.progressNotifier.value.current);
+    lyrCon.setProgress(_plySrv.progressNotifier.value.current);
   }
 
+  /// Loads lyrics for the given [target] track. If [target] is null, clears the current lyrics.
   Future<void> _loadLyricsFor(MediaItem? target) async {
     if (target == null) {
       status.value = LyricsStatus.empty;
       lyrics.value = null;
-      con.lyricNotifier.value = null;
+      lyrCon.lyricNotifier.value = null;
       return;
     }
 
+    // Increment request ID to ensure only the latest request updates the state
     final id = ++_requestId;
     status.value = LyricsStatus.loading;
     lyrics.value = null;
-    con.lyricNotifier.value = null;
+    lyrCon.lyricNotifier.value = null;
 
-    final res = await _lyricsService.getLyrics(target.toTrackData());
+    // Fetch lyrics asynchronously from lyrics service
+    final res = await _lyrSrv.getLyrics(target.toTrackData());
     if (!isClosed && id == _requestId) {
       if (res == null) {
         status.value = LyricsStatus.empty;
@@ -85,20 +90,21 @@ class LyricsViewModel extends GetxController {
         final dur = target.extras?["duration"] as int?;
         final qrc = LrcToQrcUtil.convert(res.content, totalDuration: dur != null ? Duration(seconds: dur) : null);
         if (qrc.trim().isNotEmpty) {
-          con.loadLyric(qrc);
+          lyrCon.loadLyric(qrc);
         } else {
-          con.loadLyric(res.content);
+          lyrCon.loadLyric(res.content);
         }
-        con.setProgress(_playerState.progressNotifier.value.current);
+        lyrCon.setProgress(_plySrv.progressNotifier.value.current);
       } else {
-        con.loadLyricModel(_buildPlainModel(res.content));
-        con.setProgress(Duration.zero);
+        lyrCon.loadLyricModel(_makeModel(res.content));
+        lyrCon.setProgress(Duration.zero);
       }
       status.value = LyricsStatus.ready;
     }
   }
 
-  LyricModel _buildPlainModel(String content) {
+  /// Builds a simple [LyricModel] from plain text content, treating each non-empty line as a lyric line with a fixed interval.
+  LyricModel _makeModel(String content) {
     final lines = content.split(RegExp(r'\r?\n')).map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
     final safeLines = lines.isEmpty ? [content.trim()] : lines;
 
@@ -114,6 +120,6 @@ class LyricsViewModel extends GetxController {
   }
 
   void _seekTo(Duration position) {
-    getIt<MusicService>().seek(position);
+    _plySrv.seek(position);
   }
 }

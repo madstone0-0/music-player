@@ -12,7 +12,7 @@ import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/sort.dart';
 import 'package:music_player/screens/widgets/azList.dart';
 
-import '../models/playlistModal.dart';
+import '../intents/playlistModal.dart';
 
 class Albums extends StatefulWidget {
   const Albums({super.key});
@@ -104,7 +104,6 @@ class _AlbumsState extends State<Albums> with AutomaticKeepAliveClientMixin {
                     isGrid: vm.isGrid.value,
                     onTap: () => Get.to(
                       () => const AlbumTracks(),
-                      // id: NESTED_NAV_ID,
                       arguments: {"album": item.albumData.album, "artist": item.albumData.artist},
                       transition: Transition.rightToLeftWithFade,
                     ),

@@ -4,7 +4,7 @@ import 'package:music_player/db/daos/track.dart';
 import 'package:music_player/db/repo/track.dart';
 import 'package:music_player/services/LocatorService.dart';
 
-/// Flattened artist row produced by the DAO's GROUP BY query.
+/// Data class representing an artist, including the artist's name, track count, and optional cover image path.
 class ArtistData {
   ArtistData({required this.name, required this.trackCount, this.coverPath});
 
@@ -20,6 +20,8 @@ class ArtistData {
   }
 }
 
+/// AZList item implementation for artists, used for displaying artists in an A-Z list with suspension tags based on the first
+/// letter of the artist's name.
 class AZArtist extends ISuspensionBean {
   AZArtist({required this.artist, required this.tag});
 
@@ -44,12 +46,14 @@ class ArtistsViewModel extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    ever(sortMode, (TrackSortMode mode) => _bind(mode));
+    ever(sortMode, (TrackSortMode mode) => _fetch(mode));
     ever(all, (_) => _buildAZList());
-    _bind(sortMode.value);
+    _fetch(sortMode.value);
   }
 
-  void _bind(TrackSortMode mode) {
+  /// Fetches the list of artists from the repository based on the current sorting mode and grouping,
+  /// and updates the `all` observable list with the retrieved data.
+  void _fetch(TrackSortMode mode) {
     all.bindStream(
       repo
           .watchGroupedArtists(grouping: grouping, mode: mode)
@@ -57,14 +61,15 @@ class ArtistsViewModel extends GetxController {
     );
   }
 
+  /// Builds the A-Z list of artists for display in the UI. It maps each artist to an `AZArtist` instance,
   void _buildAZList() {
     if (all.isEmpty) {
       azItms.value = [];
       return;
     }
 
-    final snapshot = List<ArtistData>.of(all);
-
+    // Use a microtask to ensure that the UI updates after the current event loop,
+    // preventing potential issues with state updates during build.
     Future.microtask(() {
       if (isClosed) return;
 
@@ -80,6 +85,7 @@ class ArtistsViewModel extends GetxController {
     });
   }
 
+  /// Toggles the sorting mode for the artists based on the specified category. If the category is 'Name',
   void toggleSort(String category) {
     if (category == 'Name') {
       sortMode.value = sortMode.value == TrackSortMode.artistAsc ? TrackSortMode.artistDesc : TrackSortMode.artistAsc;

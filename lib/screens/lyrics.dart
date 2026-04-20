@@ -79,7 +79,7 @@ class _LyricsDisplayState extends State<LyricsDisplay> {
                         key: const ValueKey('empty'), onRetry: track == null ? null : vm.refresh),
                     LyricsStatus.ready => _LyricsBody(
                       key: const ValueKey('ready'),
-                      controller: vm.con,
+                      controller: vm.lyrCon,
                       isSynced: isSynced,
                       buildStyle: isSynced ? _syncedStyle : _plainStyle,
                     ),

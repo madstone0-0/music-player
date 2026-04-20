@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:music_player/db/repo/track.dart';
 import 'package:music_player/services/LocatorService.dart';
 
+/// Represents the status of the media scanning process.
 enum ScanStatus { idle, scanning, done, error }
 
 class ScanMediaViewModel extends GetxController {
@@ -22,6 +23,7 @@ class ScanMediaViewModel extends GetxController {
 
   bool get isDone => status.value == ScanStatus.done;
 
+  /// Starts the media scanning process.
   Future<void> startScan() async {
     status.value = ScanStatus.scanning;
     currentIndex.value = 0;
@@ -30,7 +32,6 @@ class ScanMediaViewModel extends GetxController {
     errorMessage.value = '';
     doneCount.value = 0;
 
-    // Debug log
     debugPrint('Starting media scan...');
 
     try {
@@ -51,6 +52,7 @@ class ScanMediaViewModel extends GetxController {
     }
   }
 
+  /// Resets the scanning state to its initial values.
   void reset() {
     status.value = ScanStatus.idle;
     currentIndex.value = 0;

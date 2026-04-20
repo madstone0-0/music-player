@@ -16,7 +16,7 @@ class TrackCoverArt extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    final Widget baseArtwork = coverArtOverride ?? buildCoverArt(track, size, scheme: scheme, isWeb: false);
+    final Widget baseArtwork = coverArtOverride ?? buildCoverArt(track, size, scheme: scheme);
 
     switch (style) {
       case CoverStyle.square:

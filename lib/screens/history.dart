@@ -16,7 +16,7 @@ class History extends StatefulWidget {
 
 class _HistoryState extends State<History> {
   final vm = Get.put(HistoryViewModel());
-  final player = getIt<MusicService>();
+  final _plySrv = getIt<MusicService>();
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +64,7 @@ class _HistoryState extends State<History> {
             return _HistorySection(
               label: group.label,
               entries: group.items,
-              onTapTrack: (entry) => player.playOne(entry.track),
+              onTapTrack: (entry) => _plySrv.playOne(entry.track),
             );
           },
         );

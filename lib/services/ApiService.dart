@@ -1,9 +1,14 @@
+/// This file defines the API service for fetching lyrics from the LrcLib API. It includes data models for the request and response,
+/// as well as the Retrofit interface for making API calls.
+library;
+
 import 'package:dio/dio.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:retrofit/retrofit.dart';
 
 part 'ApiService.g.dart';
 
+/// Data model for the GetLyrics API request. It includes the track name, artist name, album name, and duration of the track.
 @JsonSerializable()
 class GetLyricsRequest {
   final String trackName;
@@ -30,6 +35,7 @@ class GetLyricsRequest {
   };
 }
 
+/// Data model for the GetLyrics API response. It includes the track ID, track name, artist name, album name, duration, whether the track is instrumental,
 @JsonSerializable()
 class GetLyricsResponse {
   final int id;
@@ -61,6 +67,7 @@ class GetLyricsResponse {
 abstract class ApiService {
   factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
 
+  /// Fetches lyrics for a given track based on the track name, artist name, album name, and duration.
   @GET("/api/get")
   Future<GetLyricsResponse> getLyrics({
     @Query("track_name") required String trackName,

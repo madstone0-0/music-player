@@ -7,6 +7,7 @@ import 'package:music_player/db/repo/history.dart';
 import 'package:music_player/db/tables/track.dart';
 import 'package:music_player/services/LocatorService.dart';
 
+/// A single entry in the play history, containing the track data and when it was played.
 class HistoryEntry {
   HistoryEntry({required this.track, required this.playedAt});
 
@@ -14,6 +15,7 @@ class HistoryEntry {
   final DateTime playedAt;
 }
 
+/// A group of history entries, grouped by a common label (e.g., "Today", "Yesterday", or a specific date).
 class HistoryGroup {
   HistoryGroup({required this.label, required this.items});
 
@@ -30,6 +32,12 @@ class HistoryViewModel extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _fetch();
+  }
+
+  /// Fetches the play history entries from the repository and listens for updates.
+  void _fetch() {
+    _sub?.cancel();
     _sub = repo.watchAllWithTracks().listen((entries) {
       if (isClosed) return;
       groups.value = _group(entries);
@@ -42,8 +50,10 @@ class HistoryViewModel extends GetxController {
     super.onClose();
   }
 
+  /// Clears all play history entries from the repository.
   Future<void> clearAll() => repo.clearAll();
 
+  /// Groups the given list of history entries by their played date, labeling them as "Today", "Yesterday", or a specific date.
   List<HistoryGroup> _group(List<HistoryWithTrack> entries) {
     if (entries.isEmpty) return [];
 

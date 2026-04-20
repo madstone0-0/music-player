@@ -15,7 +15,7 @@ class MainTab extends StatelessWidget {
   MainTab({super.key});
 
   final vm = Get.put(MainTabViewModel());
-  final playerState = getIt<PlayerStateService>();
+  final _plySrv = getIt<PlayerStateService>();
 
   final List<Widget> screens = const [Home(), Library(), History(), ScanMedia()];
 
@@ -28,7 +28,7 @@ class MainTab extends StatelessWidget {
       body: Stack(
         children: [
           ValueListenableBuilder<MediaItem?>(
-            valueListenable: playerState.currentTrackNotifier,
+            valueListenable: _plySrv.currentTrackNotifier,
             builder: (context, track, child) {
               final extra = track != null ? kMiniPlayerHeight : 0.0;
               final mq = MediaQuery.of(context);

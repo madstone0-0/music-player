@@ -6,6 +6,7 @@ import 'package:music_player/db/db.dart';
 import 'package:music_player/db/repo/track.dart';
 import 'package:music_player/services/LocatorService.dart';
 
+/// AZListItem implementation for albums, grouping by album name or year based on sort mode.
 class AZAlbum extends ISuspensionBean {
   final TrackData albumData;
   final String tag;
@@ -29,11 +30,12 @@ class AlbumsViewModel extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    ever(sortMode, (_) => _fetchData());
-    _fetchData();
+    ever(sortMode, (_) => _fetch());
+    _fetch();
   }
 
-  void _fetchData() {
+  /// Fetches albums grouped by the current sort mode and updates the observable list.
+  void _fetch() {
     _albumSub?.cancel();
 
     _albumSub = repo.watchGroupedAlbums(mode: sortMode.value).listen((groupedData) {
@@ -43,8 +45,8 @@ class AlbumsViewModel extends GetxController {
       }
 
       final isYearSort = sortMode.value == TrackSortMode.yearAsc || sortMode.value == TrackSortMode.yearDesc;
-      final snapshot = List<Map<String, dynamic>>.of(groupedData);
 
+      // Process the grouped data in a microtask to avoid blocking the UI thread, especially for large datasets.
       Future.microtask(() {
         if (isClosed) return;
         final List<AZAlbum> mappedList = groupedData.map((data) {
@@ -77,6 +79,7 @@ class AlbumsViewModel extends GetxController {
     super.onClose();
   }
 
+  /// Toggles the sort mode between ascending and descending for the specified category (Title or Year).
   void toggleSort(String category) {
     if (category == 'Title') {
       sortMode.value = (sortMode.value == TrackSortMode.albumAsc) ? TrackSortMode.albumDesc : TrackSortMode.albumAsc;

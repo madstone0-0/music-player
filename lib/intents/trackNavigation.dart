@@ -1,3 +1,7 @@
+/// This file contains functions for navigating to album and artist screens based on track information.
+/// It provides methods to open album and artist screens, as well as a method to resolve the appropriate artist name and grouping for a given track.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -6,11 +10,8 @@ import 'package:music_player/screens/albumTracks.dart';
 import 'package:music_player/screens/artistAlbums.dart';
 
 class TrackNavigation {
-  static bool openAlbum({
-    required BuildContext context,
-    required String? album,
-    String? artist,
-  }) {
+  /// Opens the album screen for the given album and artist.
+  static bool openAlbum({required BuildContext context, required String? album, String? artist}) {
     if (album == null || album.isEmpty) return false;
     FocusScope.of(context).unfocus();
 
@@ -22,6 +23,7 @@ class TrackNavigation {
     return true;
   }
 
+  /// Opens the artist screen for the given artist and grouping.
   static bool openArtist({
     required BuildContext context,
     required String? artist,
@@ -37,6 +39,7 @@ class TrackNavigation {
     return true;
   }
 
+  /// Resolves the appropriate artist name and grouping for a given track, prioritizing album artist if available.
   static (String? name, ArtistGrouping grouping) resolveArtistTarget(MediaItem track) {
     final albumArtist = track.extras?['albumArtist'] as String?;
     if (albumArtist != null && albumArtist.isNotEmpty) {

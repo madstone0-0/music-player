@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:music_player/db/daos/playlist.dart';
-import 'package:music_player/models/playlistModal.dart';
+import 'package:music_player/intents/playlistModal.dart';
 
 class PlaylistModal extends StatefulWidget {
   const PlaylistModal({super.key, required this.intent});

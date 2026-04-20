@@ -18,8 +18,9 @@ import 'package:music_player/screens/widgets/popupMenu.dart';
 import 'package:music_player/screens/widgets/trackCoverArt.dart';
 import 'package:music_player/services/LocatorService.dart';
 import 'package:music_player/services/PlayerStateService.dart';
+import 'package:music_player/utils/utils.dart';
 import "./widgets/controlButtons.dart";
-import '../models/playlistModal.dart';
+import '../intents/playlistModal.dart';
 
 class MainPlayer extends StatefulWidget {
   const MainPlayer({super.key});
@@ -30,10 +31,10 @@ class MainPlayer extends StatefulWidget {
 
 class MainPlayerState extends State<MainPlayer> {
   final vm = Get.put(MainPlayerViewModel(), permanent: true);
+  final _plySrv = getIt<PlayerStateService>();
 
   @override
   Widget build(BuildContext context) {
-    final playerState = getIt<PlayerStateService>();
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
 
@@ -74,33 +75,33 @@ class MainPlayerState extends State<MainPlayer> {
               onSelected: (v) {
                 switch (v) {
                   case 0:
-                    final current = playerState.currentTrackNotifier.value;
+                    final current = _plySrv.currentTrackNotifier.value;
                     if (current != null) {
                       PlaylistModal.open(context, PlaylistAddIntent.track(current.toTrackData()));
                     }
                     break;
                   case 1:
-                    final current = playerState.currentTrackNotifier.value;
+                    final current = _plySrv.currentTrackNotifier.value;
                     if (current != null) {
                       TrackDetails.show(context, current);
                     }
                     break;
                   case 2:
-                    final current = playerState.currentTrackNotifier.value;
+                    final current = _plySrv.currentTrackNotifier.value;
                     if (current != null) {
                       Get.to(() => LyricsDisplay(track: current), transition: Transition.downToUp);
                     }
                     break;
                   case 3:
-                    final current = playerState.currentTrackNotifier.value;
+                    final current = _plySrv.currentTrackNotifier.value;
                     if (current != null) _openAlbum(current);
                     break;
                   case 4:
-                    final current = playerState.currentTrackNotifier.value;
+                    final current = _plySrv.currentTrackNotifier.value;
                     if (current != null) _openArtist(current);
                     break;
                   case 5:
-                    final current = playerState.currentTrackNotifier.value;
+                    final current = _plySrv.currentTrackNotifier.value;
                     if (current != null) _editTags(current);
                 }
               },
@@ -109,9 +110,9 @@ class MainPlayerState extends State<MainPlayer> {
         ),
 
         body: ValueListenableBuilder<MediaItem?>(
-          valueListenable: playerState.currentTrackNotifier,
+          valueListenable: _plySrv.currentTrackNotifier,
           builder: (context, track, _) {
-            return _PlayerBody(track: track, page: playerState, vm: vm);
+            return _PlayerBody(track: track, page: _plySrv, vm: vm);
           },
         ),
       ),
@@ -121,18 +122,14 @@ class MainPlayerState extends State<MainPlayer> {
   void _openAlbum(MediaItem track) {
     final ok = TrackNavigation.openAlbum(context: context, album: track.album, artist: track.artist);
 
-    if (!ok) _showInfo('Album details not available for this track.');
+    if (!ok) showInfo(context, 'Album details not available for this track.');
   }
 
   void _openArtist(MediaItem track) {
     final target = TrackNavigation.resolveArtistTarget(track);
     final ok = TrackNavigation.openArtist(context: context, artist: target.$1, grouping: target.$2);
 
-    if (!ok) _showInfo('Artist details not available for this track.');
-  }
-
-  void _showInfo(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (!ok) showInfo(context, 'Artist details not available for this track.');
   }
 
   Future<void> _editTags(MediaItem track) async {

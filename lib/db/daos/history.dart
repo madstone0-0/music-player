@@ -5,6 +5,7 @@ import 'package:music_player/db/tables/track.dart';
 
 part 'history.g.dart';
 
+/// Combines a history entry with its associated track data for easier access in the UI.
 class HistoryWithTrack {
   HistoryWithTrack({required this.entry, required this.track});
 
@@ -12,6 +13,7 @@ class HistoryWithTrack {
   final TrackData track;
 }
 
+/// Represents the play count and last played date for a track, used for displaying top played tracks.
 class TrackPlayStat {
   TrackPlayStat({required this.track, required this.playCount, required this.lastPlayed});
 
@@ -20,6 +22,7 @@ class TrackPlayStat {
   final DateTime? lastPlayed;
 }
 
+/// Represents a playlist along with the last time any track from it was played, used for displaying recent playlist activity.
 class PlaylistActivity {
   PlaylistActivity({required this.playlist, required this.lastPlayed});
 
@@ -31,6 +34,7 @@ class PlaylistActivity {
 class HistoryDao extends DatabaseAccessor<Db> with _$HistoryDaoMixin {
   HistoryDao(super.attachedDatabase);
 
+  /// Inserts a new history entry for a played track. If [playedAt] is not provided, the database will use the current timestamp.
   Future<int> insertPlayedTrack({required int trackId, DateTime? playedAt}) {
     final entry = HistoryCompanion.insert(
       trackId: trackId,
@@ -39,10 +43,12 @@ class HistoryDao extends DatabaseAccessor<Db> with _$HistoryDaoMixin {
     return into(history).insert(entry);
   }
 
+  /// Retrieves the full play history, ordered by most recent plays first.
   Future<List<HistoryData>> getFullHistory() {
     return (select(history)..orderBy([(row) => OrderingTerm(expression: row.playedAt, mode: OrderingMode.desc)])).get();
   }
 
+  /// Retrieves the play history for a specific track, ordered by most recent plays first.
   Future<List<HistoryData>> getHistoryForTrack(int trackId) {
     return (select(history)
           ..where((row) => row.trackId.equals(trackId))
@@ -50,14 +56,17 @@ class HistoryDao extends DatabaseAccessor<Db> with _$HistoryDaoMixin {
         .get();
   }
 
+  /// Deletes a specific history entry by its ID. Returns the number of rows affected (should be 1 if successful).
   Future<int> deleteEntry(int id) {
     return (delete(history)..where((row) => row.id.equals(id))).go();
   }
 
+  /// Clears the entire play history. Returns the number of rows deleted.
   Future<int> clearHistory() {
     return delete(history).go();
   }
 
+  /// Retrieves the play history along with associated track data, ordered by most recent plays first.
   Future<List<HistoryWithTrack>> getHistoryWithTracks() async {
     final query = select(history).join([innerJoin(track, track.id.equalsExp(history.trackId))])
       ..orderBy([OrderingTerm(expression: history.playedAt, mode: OrderingMode.desc)]);
@@ -68,6 +77,7 @@ class HistoryDao extends DatabaseAccessor<Db> with _$HistoryDaoMixin {
         .toList(growable: false);
   }
 
+  /// Watches the play history along with associated track data, emitting updates whenever the history or track data changes. Ordered by most recent plays first.
   Stream<List<HistoryWithTrack>> watchHistoryWithTracks() {
     final query = select(history).join([innerJoin(track, track.id.equalsExp(history.trackId))])
       ..orderBy([OrderingTerm(expression: history.playedAt, mode: OrderingMode.desc)]);
@@ -79,6 +89,7 @@ class HistoryDao extends DatabaseAccessor<Db> with _$HistoryDaoMixin {
     );
   }
 
+  /// Watches the most recent play history entries along with associated track data, limited to [limit] entries. Emits updates whenever the history or track data changes.
   Stream<List<HistoryWithTrack>> watchRecentHistoryWithTracks({int limit = 10}) {
     if (limit <= 0) return Stream.value(const <HistoryWithTrack>[]);
 
@@ -93,6 +104,8 @@ class HistoryDao extends DatabaseAccessor<Db> with _$HistoryDaoMixin {
     );
   }
 
+  /// Watches the top played tracks based on play count and last played date, limited to [limit] entries.
+  /// Emits updates whenever the history or track data changes.
   Stream<List<TrackPlayStat>> watchTopPlayedTracks({int limit = 5}) {
     if (limit <= 0) return Stream.value(const <TrackPlayStat>[]);
 
@@ -123,6 +136,8 @@ class HistoryDao extends DatabaseAccessor<Db> with _$HistoryDaoMixin {
     });
   }
 
+  /// Watches the most recently active playlists based on the last played date of any track from the playlist,
+  /// limited to [limit] entries. Emits updates whenever the history, playlist entry, or playlist data changes.
   Stream<List<PlaylistActivity>> watchRecentPlaylistActivity({int limit = 3}) {
     if (limit <= 0) return Stream.value(const <PlaylistActivity>[]);
 

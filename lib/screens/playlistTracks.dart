@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:music_player/common/nav.dart';
+import 'package:music_player/db/tables/trackMapper.dart';
 import 'package:music_player/models/playlistTracks.dart';
 import 'package:music_player/screens/widgets/miniPlayer.dart';
 import 'package:music_player/screens/widgets/popupMenu.dart';
@@ -147,7 +148,7 @@ class _PlaylistTracksState extends State<PlaylistTracks> {
                       itemBuilder: (context, index) {
                         final item = vm.entries[index];
                         final track = item.track;
-                        final mediaItem = vm.toMediaItem(track);
+                        final mediaItem = track.toMediaItem();
                         final isCurrent = vm.currentTrackId.value == mediaItem.id && vm.currentIndex.value == index;
 
                         return ListTile(

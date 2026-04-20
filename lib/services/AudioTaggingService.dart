@@ -1,3 +1,9 @@
+/// This service handles reading and writing audio tags using the audiotags package.
+/// It provides methods to read tags from a file path and to write tags back to the file.
+/// When reading, it also handles extracting cover art and saving it using the CoverArtStore.
+/// If reading fails, it falls back to using the file name as the title and marks the track as indexed.
+library;
+
 import 'dart:io';
 
 import 'package:audiotags/audiotags.dart';
@@ -7,6 +13,7 @@ import 'package:music_player/db/db.dart';
 import 'package:music_player/services/CoverArtStore.dart';
 
 class AudioTaggingService {
+  /// Reads the audio tags from the specified file path.
   static Future<Tag?> readTag(String path) async {
     try {
       return await AudioTags.read(path);
@@ -16,6 +23,7 @@ class AudioTaggingService {
     }
   }
 
+  /// Reads the audio tags and returns a TrackCompanion for database insertion.
   static Future<TrackCompanion> read(String path) async {
     final fallbackTitle = path.split(Platform.pathSeparator).last;
     final fileModifiedDate = await File(path).lastModified();
@@ -64,6 +72,7 @@ class AudioTaggingService {
     }
   }
 
+  /// Writes the provided TrackData back to the audio file's tags.
   static Future<void> write(TrackData track) async {
     final tag = Tag(
       title: track.title,

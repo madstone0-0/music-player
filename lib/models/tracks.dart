@@ -5,6 +5,7 @@ import 'package:music_player/db/db.dart';
 import 'package:music_player/db/repo/track.dart';
 import 'package:music_player/services/LocatorService.dart';
 
+/// AZList item implementation for TrackData, used for displaying tracks in an indexed list with headers.
 class AZTrack extends ISuspensionBean {
   final TrackData track;
   final String tag;
@@ -25,15 +26,21 @@ class TracksViewModel extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // Watch for changes in the sorting mode and update the track list accordingly
     ever(sortMode, (TrackSortMode mode) {
       all.bindStream(repo.watchAll(mode: mode));
     });
-
+    // Watch for changes in the track list and regenerate the AZTrack items for the indexed list
     ever(all, (_) => _generateAZItm());
+    _fetch();
+  }
 
+  /// Fetches the track data from the repository based on the current sorting mode and updates the observable list.
+  void _fetch() {
     all.bindStream(repo.watchAll(mode: sortMode.value));
   }
 
+  /// Generates the list of AZTrack items for the indexed list view based on the current track data and sorting mode.
   void _generateAZItm() {
     if (all.isEmpty) {
       azItms.value = [];
@@ -66,19 +73,21 @@ class TracksViewModel extends GetxController {
         return AZTrack(track: track, tag: tag);
       }).toList();
 
-      // This utility calculates the headers and prepares the list for the sidebar
       SuspensionUtil.setShowSuspensionStatus(mappedList);
       if (!isClosed) azItms.value = mappedList;
     });
   }
 
+  /// Toggles the sorting mode for the specified category (Title, Artist, or Album) between ascending and descending order.
   void toggleSort(String category) {
     switch (category) {
       case 'Title':
         sortMode.value = (sortMode.value == TrackSortMode.titleAsc) ? TrackSortMode.titleDesc : TrackSortMode.titleAsc;
         break;
       case 'Artist':
-        sortMode.value = (sortMode.value == TrackSortMode.artistAsc) ? TrackSortMode.artistDesc : TrackSortMode.artistAsc;
+        sortMode.value = (sortMode.value == TrackSortMode.artistAsc)
+            ? TrackSortMode.artistDesc
+            : TrackSortMode.artistAsc;
         break;
       case 'Album':
         sortMode.value = (sortMode.value == TrackSortMode.albumAsc) ? TrackSortMode.albumDesc : TrackSortMode.albumAsc;

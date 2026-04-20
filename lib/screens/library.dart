@@ -27,8 +27,7 @@ class _LibraryState extends State<Library> with SingleTickerProviderStateMixin {
     (label: 'Albums', icon: Icons.album_outlined),
     (label: 'Album Artists', icon: Icons.person_outline),
     (label: 'Artists', icon: Icons.people_outline),
-    (label: 'Playlists',  icon: Icons.queue_music_outlined),
-    // (label: 'Genres',     icon: Icons.category_outlined),
+    (label: 'Playlists', icon: Icons.queue_music_outlined),
   ];
 
   @override

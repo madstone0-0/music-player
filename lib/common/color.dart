@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-const _seedPrimary = Color(0xff89b4f9); // unchanged — sky blue
-const _seedSecondary = Color(0xffA78BFA); // soft violet, replaces the clashing pink
-const _seedTertiary = Color(0xffFFAB00); // warm amber, unchanged — good complement
+const _seedPrimary = Color(0xff89b4f9);
+const _seedSecondary = Color(0xffA78BFA);
+const _seedTertiary = Color(0xffFFAB00);
 
 class AppTheme {
   AppTheme._();
@@ -12,15 +12,11 @@ class AppTheme {
       seedColor: _seedPrimary,
       brightness: Brightness.dark,
 
-      // Surfaces stripped of blue saturation → near-black neutrals.
-      // Primary (#89b4f9) now has real contrast to pop against these.
       surfaceContainerLowest: const Color(0xff07080F),
-      // near-AMOLED black
       surfaceContainerLow: const Color(0xff0D0F18),
       surface: const Color(0xff111320),
       surfaceContainer: const Color(0xff171929),
       surfaceContainerHigh: const Color(0xff1D1F30),
-      // lyrics card — dark enough for white text contrast
       surfaceContainerHighest: const Color(0xff232537),
 
       primary: _seedPrimary,
@@ -47,7 +43,6 @@ class AppTheme {
     );
   }
 
-  // light theme unchanged — surface shift only matters for dark
   static ThemeData get light {
     final scheme = ColorScheme.fromSeed(
       seedColor: _seedPrimary,

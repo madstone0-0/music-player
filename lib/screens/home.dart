@@ -19,7 +19,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final vm = Get.put(HomeViewModel());
-  final player = getIt<MusicService>();
+  final _plySrv = getIt<MusicService>();
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +161,7 @@ class _HomeState extends State<Home> {
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: TrackRow(
                 track: track,
-                onPressed: () => player.playOne(stat.track),
+                onPressed: () => _plySrv.playOne(stat.track),
                 trailing: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -206,7 +206,7 @@ class _HomeState extends State<Home> {
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: TrackRow(
                 track: track,
-                onPressed: () => player.playOne(entry.track),
+                onPressed: () => _plySrv.playOne(entry.track),
                 trailing: Text(
                   _formatRecentTimestamp(playedAt),
                   style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),

@@ -5,6 +5,7 @@ import 'package:music_player/db/repo/track.dart';
 import 'package:music_player/models/artists.dart';
 import 'package:music_player/services/LocatorService.dart';
 
+/// Data class representing an album by an artist, including the album name, track count, release year, and cover image path.
 class ArtistAlbumData {
   ArtistAlbumData({required this.album, required this.trackCount, this.year, this.coverPath});
 
@@ -23,6 +24,8 @@ class ArtistAlbumData {
   }
 }
 
+/// ViewModel for managing the state of an artist's albums, including fetching album data from the repository and exposing it as an observable list.
+/// The [grouping] parameter determines whether albums are grouped by artist or album artist
 class ArtistAlbumsViewModel extends GetxController {
   ArtistAlbumsViewModel({required this.artistName, required this.grouping});
 
@@ -35,6 +38,11 @@ class ArtistAlbumsViewModel extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _fetch();
+  }
+
+  /// Fetches the albums for the specified artist from the repository and updates the observable list of albums.
+  void _fetch() {
     albums.bindStream(
       repo
           .watchAlbumsByArtist(artistName, grouping: grouping)

@@ -18,7 +18,6 @@ Widget buildCoverArt(
   MediaItem? track,
   double size, {
   ColorScheme scheme = const ColorScheme.dark(),
-  bool isWeb = false,
 }) {
   if (track == null) {
     return coverArtPlaceholder(scheme, size);
@@ -30,7 +29,7 @@ Widget buildCoverArt(
     return coverArtPlaceholder(scheme, size);
   }
 
-  if (isWeb || uri.scheme.startsWith('http')) {
+  if (uri.scheme.startsWith('http')) {
     return CachedNetworkImage(
       imageUrl: uri.toString(),
       fit: BoxFit.cover,
