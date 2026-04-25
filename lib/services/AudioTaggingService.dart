@@ -74,6 +74,7 @@ class AudioTaggingService {
 
   /// Writes the provided TrackData back to the audio file's tags.
   static Future<void> write(TrackData track) async {
+    final initialTag = await readTag(track.path);
     final tag = Tag(
       title: track.title,
       trackArtist: track.artist,
@@ -82,7 +83,7 @@ class AudioTaggingService {
       genre: track.genre,
       year: track.year,
       trackNumber: track.trackNo,
-      pictures: [],
+      pictures: initialTag?.pictures ?? [],
     );
 
     try {
